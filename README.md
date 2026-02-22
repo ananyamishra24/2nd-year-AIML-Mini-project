@@ -128,7 +128,3 @@ This project was built as a 2nd Year AIML Mini Project.
 - Use the chat interface to start a conversation with the AI assistant.
 - You can create new conversations, view existing ones, and send messages to the assistant.
 - The application stores all conversations and messages, allowing you to revisit them later.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a pull request or open an issue for any suggestions or improvements.
