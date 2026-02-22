@@ -1,0 +1,24 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Secrets
+.env
+
+# Database (local only)
+stories.db
+
+# Generated images (large binary files)
+client/generated_images/*.png
+client/generated_images/*.jpg
+client/generated_images/*.webp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.code-workspace

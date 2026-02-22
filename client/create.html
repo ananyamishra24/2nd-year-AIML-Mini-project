@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Story · Brave Story Maker</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+<div class="create-bg">
+  <div class="create-blob-r"></div>
+  <div class="create-blob-l"></div>
+
+  <div class="create-inner">
+    <button class="create-back" onclick="history.back()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+      Back to Library
+    </button>
+
+    <div class="create-card">
+      <div class="create-header">
+        <div class="create-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </div>
+        <h1>Design Your Hero</h1>
+        <p>Tell us about the brave child, and we'll write a legend.</p>
+      </div>
+
+      <form id="create-form" class="form-space" autocomplete="off">
+
+        <!-- Row 1: Name + Age + Gender (3 columns) -->
+        <div class="form-grid-3">
+          <div class="form-group" style="grid-column:1/2">
+            <label class="form-label" for="childName">
+              <svg class="ico-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+              Hero's Name
+            </label>
+            <input id="childName" name="childName" type="text" class="form-input"
+              placeholder="e.g. Leo" maxlength="40" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="age">Age</label>
+            <input id="age" name="age" type="number" class="form-input"
+              placeholder="6" min="2" max="14" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="gender">Gender</label>
+            <select id="gender" name="gender" class="form-select" required>
+              <option value="">Select</option>
+              <option value="boy">Boy</option>
+              <option value="girl">Girl</option>
+              <option value="neutral">Neutral</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Medical Challenge full width -->
+        <div class="form-group">
+          <label class="form-label" for="condition">
+            <svg class="ico-red" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            Medical Challenge
+          </label>
+          <input id="condition" name="condition" type="text" class="form-input"
+            placeholder="e.g. Asthma, Diabetes, Broken Leg" maxlength="100" required />
+          <span class="form-hint">We'll explain this gently and turn treatments into superpowers.</span>
+        </div>
+
+        <!-- Hero Characteristics -->
+        <div class="form-group">
+          <div class="form-section-label">
+            <svg class="ico-accent" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            Hero Characteristics
+          </div>
+          <p class="traits-desc">What makes your hero special? Select the traits that best describe them.</p>
+
+          <div class="traits-grid" id="traits-grid">
+            <!-- rendered by JS -->
+          </div>
+
+          <p class="traits-selected">Selected: <span id="traits-label">none</span></p>
+          <input type="hidden" id="heroCharacteristics" name="heroCharacteristics" />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-xl" id="submit-btn" style="width:100%;border-radius:1rem">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+          </svg>
+          Write My Story
+        </button>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay hidden" id="loading-overlay">
+  <div class="loading-spinner-lg"></div>
+  <p class="loading-title">Weaving Magic…</p>
+  <p class="loading-sub">Creating a personalised story and illustrations</p>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/js/create.js"></script>
+</body>
+</html>
