@@ -19,6 +19,11 @@ client/generated_images/*.webp
 .DS_Store
 Thumbs.db
 
+# Logs
+logs/
+server_out.log
+server_err.log
+
 # Editor
 .vscode/
 *.code-workspace

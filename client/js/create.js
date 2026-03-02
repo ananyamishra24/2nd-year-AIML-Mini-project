@@ -87,9 +87,13 @@ document.getElementById('create-form').addEventListener('submit', async (e) => {
   document.getElementById('submit-btn').disabled = true;
 
   try {
+    const headers = { 'Content-Type': 'application/json' };
+    const token = localStorage.getItem('cc_token');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const res = await fetch('/api/stories/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         childName: name, age, gender, condition: cond,
         heroCharacteristics: traits || 'brave, kind',

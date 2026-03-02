@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login · Cartoon Care</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+<div class="auth-bg">
+  <div class="auth-blob auth-blob-1"></div>
+  <div class="auth-blob auth-blob-2"></div>
+  <div class="auth-blob auth-blob-3"></div>
+
+  <div class="auth-container">
+    <!-- Logo -->
+    <a href="/" class="auth-logo">
+      <div class="auth-logo-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+        </svg>
+      </div>
+      Cartoon Care
+    </a>
+
+    <!-- Auth Card -->
+    <div class="auth-card">
+      <!-- Tab Toggle -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" data-tab="login">Login</button>
+        <button class="auth-tab" id="tab-signup" data-tab="signup">Sign Up</button>
+        <div class="auth-tab-indicator" id="tab-indicator"></div>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="login-form" class="auth-form" autocomplete="off">
+        <div class="auth-header">
+          <div class="auth-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+          </div>
+          <h2>Welcome Back!</h2>
+          <p class="auth-subtitle">Sign in to continue creating magical stories</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-email">
+            <svg class="ico-primary" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            Email
+          </label>
+          <input id="login-email" name="email" type="email" class="form-input"
+            placeholder="parent@example.com" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">
+            <svg class="ico-primary" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            Password
+          </label>
+          <div class="password-wrap">
+            <input id="login-password" name="password" type="password" class="form-input"
+              placeholder="Enter your password" required />
+            <button type="button" class="password-toggle" data-target="login-password" title="Show password">
+              <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg class="eye-closed hidden" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-xl auth-submit" id="login-btn">
+          <span class="btn-text">Login</span>
+          <span class="spinner hidden" id="login-spinner"></span>
+        </button>
+
+        <p class="auth-switch">
+          Don't have an account? <button type="button" class="auth-switch-link" data-tab="signup">Sign up</button>
+        </p>
+      </form>
+
+      <!-- SIGNUP FORM -->
+      <form id="signup-form" class="auth-form hidden" autocomplete="off">
+        <div class="auth-header">
+          <div class="auth-icon auth-icon-signup">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="8.5" cy="7" r="4"/>
+              <line x1="20" y1="8" x2="20" y2="14"/>
+              <line x1="23" y1="11" x2="17" y2="11"/>
+            </svg>
+          </div>
+          <h2>Create Account</h2>
+          <p class="auth-subtitle">Join Cartoon Care to create stories for your child</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signup-name">
+            <svg class="ico-primary" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            Your Name
+          </label>
+          <input id="signup-name" name="name" type="text" class="form-input"
+            placeholder="e.g. Sarah" minlength="2" maxlength="100" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signup-email">
+            <svg class="ico-primary" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            Email
+          </label>
+          <input id="signup-email" name="email" type="email" class="form-input"
+            placeholder="parent@example.com" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signup-password">
+            <svg class="ico-primary" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            Password
+          </label>
+          <div class="password-wrap">
+            <input id="signup-password" name="password" type="password" class="form-input"
+              placeholder="Min 8 characters" minlength="8" required />
+            <button type="button" class="password-toggle" data-target="signup-password" title="Show password">
+              <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg class="eye-closed hidden" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </button>
+          </div>
+          <span class="form-hint">Must be at least 8 characters</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signup-confirm">
+            <svg class="ico-primary" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Confirm Password
+          </label>
+          <input id="signup-confirm" name="confirmPassword" type="password" class="form-input"
+            placeholder="Re-enter your password" minlength="8" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-xl auth-submit" id="signup-btn">
+          <span class="btn-text">Create Account</span>
+          <span class="spinner hidden" id="signup-spinner"></span>
+        </button>
+
+        <p class="auth-switch">
+          Already have an account? <button type="button" class="auth-switch-link" data-tab="login">Login</button>
+        </p>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <p class="auth-footer">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      Your data is safe and never shared
+    </p>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/js/auth.js"></script>
+</body>
+</html>

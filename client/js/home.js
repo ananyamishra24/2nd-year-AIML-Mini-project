@@ -15,14 +15,22 @@ function showToast(msg, type = 'success') {
   setTimeout(() => t.remove(), 3000);
 }
 
+// ── Auth helper ────────────────────────────────────────
+function authHeaders() {
+  const h = {};
+  const t = localStorage.getItem('cc_token');
+  if (t) h['Authorization'] = `Bearer ${t}`;
+  return h;
+}
+
 // ── Fetch ──────────────────────────────────────────────
 async function loadStories() {
   const grid = document.getElementById('stories-grid');
   grid.innerHTML = skeletons(6);
   try {
     const [allRes, favRes] = await Promise.all([
-      fetch('/api/stories'),
-      fetch('/api/stories/favorites'),
+      fetch('/api/stories', { headers: authHeaders() }),
+      fetch('/api/stories/favorites', { headers: authHeaders() }),
     ]);
     allStories = await allRes.json();
     favStories = await favRes.json();
@@ -163,7 +171,7 @@ function emptyState() {
 // ── Delete ─────────────────────────────────────────────
 async function deleteStory(id) {
   try {
-    const res = await fetch(`/api/stories/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/stories/${id}`, { method: 'DELETE', headers: authHeaders() });
     if (!res.ok) throw new Error();
     allStories = allStories.filter(s => s.id !== Number(id));
     favStories = favStories.filter(s => s.id !== Number(id));

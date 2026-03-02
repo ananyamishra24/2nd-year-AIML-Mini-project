@@ -27,11 +27,17 @@ function showToast(msg, type = 'success') {
   c.appendChild(t);
   setTimeout(() => t.remove(), 3000);
 }
+function authHeaders() {
+  const h = {};
+  const t = localStorage.getItem('cc_token');
+  if (t) h['Authorization'] = `Bearer ${t}`;
+  return h;
+}
 
 // ── Load story ─────────────────────────────────────────
 async function loadStory() {
   try {
-    const res = await fetch(`/api/stories/${storyId()}`);
+    const res = await fetch(`/api/stories/${storyId()}`, { headers: authHeaders() });
     if (!res.ok) throw new Error('Not found');
     story = await res.json();
     pages = typeof story.pages === 'string' ? JSON.parse(story.pages) : (story.pages || []);
@@ -282,7 +288,7 @@ function chunkText(text, maxLen) {
 // ── Favourite ──────────────────────────────────────────
 async function toggleFav() {
   try {
-    const res = await fetch(`/api/stories/${storyId()}/favorite`, { method: 'POST' });
+    const res = await fetch(`/api/stories/${storyId()}/favorite`, { method: 'POST', headers: authHeaders() });
     if (!res.ok) throw new Error();
     const data = await res.json();
     isFav = data.isFavorite;

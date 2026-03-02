@@ -122,6 +122,14 @@
 <!-- TOAST -->
 <div class="toast-container" id="toast-container"></div>
 
+<script>
+// Auth guard — redirect to login if not authenticated
+(function(){
+  if (!localStorage.getItem('cc_token')) {
+    window.location.href = '/login?redirect=/create';
+  }
+})();
+</script>
 <script src="/js/create.js"></script>
 </body>
 </html>

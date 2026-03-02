@@ -46,8 +46,7 @@ def send_message(id):
         content = request.json.get('content')
         chat_storage.create_message(id, 'user', content)
         messages = chat_storage.get_messages_by_conversation(id)
-        # Here you would integrate with OpenAI to get a response
-        # For now, we will just return a placeholder response
+        # Placeholder response (integrate with Gemini if needed)
         response_content = "AI response to: " + content
         chat_storage.create_message(id, 'assistant', response_content)
         return jsonify({'content': response_content}), 200
