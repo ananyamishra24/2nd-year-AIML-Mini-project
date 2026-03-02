@@ -139,9 +139,25 @@ CartoonCare includes a full authentication system:
 
 ## 📸 Screenshots
 
-| Home | Login | Create | Story Viewer |
-|------|-------|--------|-------------|
-| Story library with favorites | Themed login/signup | Hero design form | Illustrated page reader |
+### Authentication
+| Login | Sign Up |
+|-------|---------|
+| ![Login](screenshots/login.png) | ![Sign Up](screenshots/signup.png) |
+
+### Home Page
+| Story Library | Empty Favorites |
+|--------------|-----------------|
+| ![Home with stories](screenshots/home-stories.png) | ![Home empty](screenshots/home-empty.png) |
+
+### Create a Story
+| Empty Form | Filled Form | Generating Story |
+|-----------|-------------|-----------------|
+| ![Create empty](screenshots/create-empty.png) | ![Create filled](screenshots/create-filled.png) | ![Generating](screenshots/generating.png) |
+
+### Story Viewer
+| Page 1 | Page 2 | Read Aloud | Translate |
+|--------|--------|-----------|-----------|
+| ![Story page 1](screenshots/story-page1.png) | ![Story page 2](screenshots/story-page2.png) | ![Narration](screenshots/story-narration.png) | ![Translate](screenshots/story-translate.png) |
 
 ---
 
