@@ -115,6 +115,9 @@ FLUX2PRO_API_KEY=your_flux2pro_api_key_here
 FLUX2PRO_ENDPOINT=your_flux2pro_endpoint_here
 JWT_SECRET_KEY=your_jwt_secret_here
 
+# Optional — CORS allowed origins (comma-separated)
+CORS_ALLOWED_ORIGINS=http://localhost:5000,http://127.0.0.1:5000
+
 # Optional — S3 storage (defaults to local filesystem)
 STORAGE_BACKEND=local
 AWS_ACCESS_KEY_ID=your_aws_key
@@ -173,6 +176,42 @@ CartoonCare includes a full authentication system:
 - **Auth Guard** — Story creation requires login; unauthenticated users are redirected to the login page
 - **Nav Bar** — Dynamically shows user avatar + name + logout when signed in, or a login button otherwise
 - **Secure** — Passwords hashed with PBKDF2 + random salt; JWT tokens sent via `Authorization: Bearer` header
+
+---
+
+## 🔒 Security
+
+CartoonCare applies defense-in-depth across the full stack:
+
+### SQL Injection Prevention
+
+All database queries use **parameterized `?` placeholders** via the `_execute()` helper in `database_v2.py`. No raw string formatting of user values is used anywhere. The `update_child()` function enforces an explicit `ALLOWED_COLUMNS` whitelist to prevent dynamic column injection.
+
+### XSS Prevention
+
+`sanitize_html()` in `content_safety.py` strips HTML tags, removes `javascript:` URIs and inline event handlers, then **escapes `&`, `<`, `>`** as HTML entities. User-controlled inputs (child name, conditions, registration name) are sanitized **at storage time** before hitting the database, not just at display time.
+
+### CSRF Protection
+
+Mitigated by design: JWT tokens are transmitted **only via the `Authorization` header**, never via cookies. Browsers cannot auto-attach custom headers on cross-origin requests, so CSRF attacks have no mechanism to forge authenticated requests.
+
+### Security Headers
+
+All responses include hardened headers via an `after_request` handler in `main.py`:
+
+| Header | Value |
+|--------|-------|
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `DENY` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` |
+| `Content-Security-Policy` | `default-src 'self'` |
+| `X-XSS-Protection` | `1; mode=block` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
+
+### CORS
+
+Replaced wildcard `*` with explicit allowed origins read from the `CORS_ALLOWED_ORIGINS` environment variable (comma-separated). Defaults to `http://localhost:5000,http://127.0.0.1:5000` for local development. Set your production domain in `.env`.
 
 ---
 
