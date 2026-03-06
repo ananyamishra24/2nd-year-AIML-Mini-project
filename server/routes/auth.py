@@ -12,6 +12,7 @@ from auth import (
     hash_password, verify_password, create_token,
     validate_registration, login_required,
 )
+from content_safety import sanitize_html
 
 logger = logging.getLogger('brave_story.routes.auth')
 
@@ -35,7 +36,7 @@ def register():
         return jsonify({'message': 'Email already registered'}), 409
 
     pw_hash, salt = hash_password(data['password'])
-    user = db.create_user(data['email'], data['name'], pw_hash, salt)
+    user = db.create_user(data['email'], sanitize_html(data['name']), pw_hash, salt)
     if not user:
         return jsonify({'message': 'Failed to create user'}), 500
 

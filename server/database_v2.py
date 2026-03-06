@@ -236,6 +236,7 @@ def init_db():
             ]
             cur = conn.cursor()
             for table, column, col_def in migrations:
+                # Safe: table/column/col_def are hardcoded literals above, not user input
                 cur.execute(f'PRAGMA table_info({table})')
                 existing = [row[1] for row in cur.fetchall()]
                 if column not in existing:
@@ -362,8 +363,9 @@ def get_child(child_id: int) -> Optional[dict]:
 
 
 def update_child(child_id: int, **kwargs) -> Optional[dict]:
-    allowed = {'name', 'age', 'gender', 'conditions', 'preferences'}
-    updates = {k: v for k, v in kwargs.items() if k in allowed}
+    # Whitelist of allowed column names — prevents SQL injection via key names
+    ALLOWED_COLUMNS = {'name', 'age', 'gender', 'conditions', 'preferences'}
+    updates = {k: v for k, v in kwargs.items() if k in ALLOWED_COLUMNS}
     if not updates:
         return get_child(child_id)
 
@@ -373,6 +375,7 @@ def update_child(child_id: int, **kwargs) -> Optional[dict]:
         updates['preferences'] = json.dumps(updates['preferences'])
 
     with get_db() as conn:
+        # Safe: keys are validated against ALLOWED_COLUMNS above
         set_clause = ', '.join(f'{k} = ?' for k in updates.keys())
         values = list(updates.values()) + [child_id]
         _execute(conn, f'UPDATE children SET {set_clause} WHERE id = ?', values)

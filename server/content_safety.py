@@ -235,10 +235,12 @@ def moderate_image_prompt(prompt: str) -> Tuple[str, List[str]]:
 
 
 def sanitize_html(text: str) -> str:
-    """Remove any HTML/script injection from text."""
+    """Remove any HTML/script injection from text and escape dangerous characters."""
     # Remove HTML tags
     text = re.sub(r'<[^>]+>', '', text)
     # Remove script-like content
     text = re.sub(r'javascript:', '', text, flags=re.IGNORECASE)
     text = re.sub(r'on\w+\s*=', '', text, flags=re.IGNORECASE)
+    # Escape remaining HTML-special characters
+    text = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
     return text

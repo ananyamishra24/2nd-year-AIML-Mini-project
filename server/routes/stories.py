@@ -70,6 +70,10 @@ def add_child():
         if not isinstance(c, str) or len(c) > 200:
             return jsonify({'message': 'Each condition must be a string (max 200 chars)'}), 400
 
+    # Sanitize text inputs before storage (XSS prevention)
+    name = sanitize_html(name)
+    conditions = [sanitize_html(c) for c in conditions]
+
     child = db.create_child(g.user_id, name, age, gender, conditions)
     return jsonify(child), 201
 
@@ -79,6 +83,13 @@ def add_child():
 def update_child(child_id):
     """Update an existing child profile by ID."""
     data = request.get_json()
+
+    # Sanitize text fields before passing to DB (XSS prevention)
+    if 'name' in data and isinstance(data['name'], str):
+        data['name'] = sanitize_html(data['name'].strip())
+    if 'conditions' in data and isinstance(data['conditions'], list):
+        data['conditions'] = [sanitize_html(c) for c in data['conditions'] if isinstance(c, str)]
+
     child = db.update_child(child_id, **data)
     if not child:
         return jsonify({'message': 'Child not found'}), 404

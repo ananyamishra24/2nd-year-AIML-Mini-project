@@ -65,6 +65,9 @@ def decode_token(token: str) -> Optional[dict]:
 
 
 # ── Auth middleware ───────────────────────────────────────────────────
+# CSRF note: Tokens are transmitted exclusively via the Authorization
+# header (not cookies), so CSRF attacks cannot attach credentials
+# automatically. No additional CSRF token mechanism is required.
 
 def login_required(f):
     """Decorator to require authentication on routes."""
