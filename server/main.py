@@ -44,7 +44,14 @@ logger = logging.getLogger('brave_story.app')
 # ── App factory ───────────────────────────────────────────────────────
 
 app = Flask(__name__, static_folder=None)
-CORS(app)
+
+# ── CORS: restrict to explicit origins (never wildcard in production) ─
+_allowed_origins = os.environ.get(
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:5000,http://127.0.0.1:5000'
+)
+CORS(app, origins=[o.strip() for o in _allowed_origins.split(',')],
+     supports_credentials=False)
 
 # ── Rate limiting (in-memory; swap to Redis for multi-process) ───────
 limiter = Limiter(
@@ -81,6 +88,26 @@ def add_no_cache(response):
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
+    return response
+
+@app.after_request
+def add_security_headers(response):
+    """Add OWASP-recommended security headers to every response."""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob: https:; "
+        "font-src 'self'; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'"
+    )
+    response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
     return response
 
 
