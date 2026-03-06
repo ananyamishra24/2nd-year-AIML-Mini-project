@@ -181,7 +181,7 @@ def generate_story():
 
         import google.generativeai as genai
 
-        genai.configure(api_key=gemini_key)
+        genai.configure(api_key=gemini_key)  # type: ignore[attr-defined]
 
         prompt = build_story_prompt(
             child_name=child_name, age=age, gender=gender,
@@ -190,7 +190,7 @@ def generate_story():
         )
 
         with AIGenerationTracker('gemini', 'gemini-2.5-flash'):
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')  # type: ignore[attr-defined]
             result = model.generate_content(prompt)
             content = result.text.strip()
             usage_counter.record('gemini', success=True)

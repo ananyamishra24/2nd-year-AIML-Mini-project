@@ -163,13 +163,25 @@ class AzureBlobStorage:
 # ── Factory ──────────────────────────────────────────────────────────
 
 def create_storage(local_images_dir: Optional[str] = None):
-    """Create the appropriate storage backend."""
+    """Create the appropriate storage backend.
+
+    Falls back to local storage if the required cloud SDK is not installed.
+    """
+    base = local_images_dir or str(Path(__file__).parent.parent / 'client' / 'generated_images')
+
     if STORAGE_BACKEND == 's3':
-        return S3Storage()
+        try:
+            return S3Storage()
+        except (ImportError, Exception) as e:
+            logger.warning(f'S3 storage unavailable ({e}), falling back to local storage')
+            return LocalStorage(base)
     elif STORAGE_BACKEND == 'azure':
-        return AzureBlobStorage()
+        try:
+            return AzureBlobStorage()
+        except (ImportError, Exception) as e:
+            logger.warning(f'Azure storage unavailable ({e}), falling back to local storage')
+            return LocalStorage(base)
     else:
-        base = local_images_dir or str(Path(__file__).parent.parent / 'client' / 'generated_images')
         return LocalStorage(base)
 
 

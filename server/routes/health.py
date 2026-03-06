@@ -7,6 +7,7 @@ Health-check endpoint, admin stats, and cloud storage management.
 import time
 import logging
 from flask import Blueprint, request, jsonify, g
+from typing import Any
 
 import database_v2 as db
 from auth import login_required
@@ -17,7 +18,7 @@ logger = logging.getLogger('brave_story.routes.health')
 health_bp = Blueprint('health', __name__)
 
 # cloud storage injected at init time
-_image_storage = None
+_image_storage: Any = None
 
 
 def init_health_bp(image_storage):
