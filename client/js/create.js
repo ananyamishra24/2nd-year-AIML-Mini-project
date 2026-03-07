@@ -91,13 +91,30 @@ document.getElementById('create-form').addEventListener('submit', async (e) => {
     const token = localStorage.getItem('cc_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
+    const body = {
+      childName: name, age, gender, condition: cond,
+      heroCharacteristics: traits || 'brave, kind',
+    };
+    // Collect optional story settings
+    const storyLength = (form.storyLength && form.storyLength.value) || '';
+    const tone = (form.tone && form.tone.value) || '';
+    const theme = (form.theme && form.theme.value) || '';
+    const villainType = (form.villainType && form.villainType.value) || '';
+    const endingType = (form.endingType && form.endingType.value) || '';
+    const illustrationStyle = (form.illustrationStyle && form.illustrationStyle.value) || '';
+    const readingLevel = (form.readingLevel && form.readingLevel.value) || '';
+    if (storyLength) body.storyLength = storyLength;
+    if (tone) body.tone = tone;
+    if (theme) body.theme = theme;
+    if (villainType) body.villainType = villainType;
+    if (endingType) body.endingType = endingType;
+    if (illustrationStyle) body.illustrationStyle = illustrationStyle;
+    if (readingLevel) body.readingLevel = readingLevel;
+
     const res = await fetch('/api/stories/generate', {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        childName: name, age, gender, condition: cond,
-        heroCharacteristics: traits || 'brave, kind',
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
@@ -112,6 +129,14 @@ document.getElementById('create-form').addEventListener('submit', async (e) => {
     document.getElementById('submit-btn').disabled = false;
     showToast(err.message || 'Something went wrong. Please try again.');
   }
+});
+
+// ── Settings toggle ────────────────────────────────────
+document.getElementById('settings-toggle').addEventListener('click', () => {
+  const panel = document.getElementById('settings-panel');
+  const btn = document.getElementById('settings-toggle');
+  panel.classList.toggle('hidden');
+  btn.classList.toggle('open');
 });
 
 // ── Init ───────────────────────────────────────────────

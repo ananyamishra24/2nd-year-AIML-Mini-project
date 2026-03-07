@@ -20,32 +20,71 @@ PROMPT_VERSION = '2.0.0'
 def build_story_prompt(child_name: str, age: int, gender: str,
                        condition: str, hero_characteristics: str = '',
                        preferences: Optional[list] = None,
-                       story_history: Optional[list] = None) -> str:
+                       story_history: Optional[list] = None,
+                       story_length: str = '', tone: str = '',
+                       theme: str = '', villain_type: str = '',
+                       ending_type: str = '', illustration_style: str = '',
+                       reading_level: str = '') -> str:
     """
     Build a personalized story generation prompt.
-    Incorporates child preferences and story history for personalization.
+    Incorporates child preferences, story history, and custom settings.
     """
 
-    # Age-adapted instructions
-    if age <= 7:
-        age_instructions = (
+    # Age-adapted instructions (can be overridden by reading_level)
+    effective_level = reading_level
+    if not effective_level:
+        if age <= 4:
+            effective_level = 'toddler'
+        elif age <= 7:
+            effective_level = 'early-reader'
+        elif age <= 12:
+            effective_level = 'older-child'
+        else:
+            effective_level = 'teen'
+
+    # Determine page count from story_length setting or default by level
+    page_counts = {
+        'short': 1,
+        'medium': 3,
+        'long': 5,
+    }
+    level_defaults = {
+        'toddler': 3,
+        'early-reader': 3,
+        'older-child': 4,
+        'teen': 5,
+    }
+    num_pages = page_counts.get(story_length, level_defaults.get(effective_level, 3))
+
+    level_instructions = {
+        'toddler': (
             "Use very simple words and short sentences. "
-            "Playful, gentle tone. Generate exactly 3 pages. "
+            "Playful, gentle tone. "
+            f"Generate exactly {num_pages} page(s). "
+            "Each page should be 2-3 sentences max. "
+            "Use lots of sound words and fun repetition."
+        ),
+        'early-reader': (
+            "Use simple words and short sentences. "
+            "Playful, gentle tone. "
+            f"Generate exactly {num_pages} page(s). "
             "Each page should be 2-4 sentences max. "
             "Use lots of sound words and fun repetition."
-        )
-    elif age <= 12:
-        age_instructions = (
+        ),
+        'older-child': (
             "Use moderate vocabulary with engaging storytelling. "
-            "Include dialogue and adventure elements. Generate exactly 4 pages. "
+            "Include dialogue and adventure elements. "
+            f"Generate exactly {num_pages} page(s). "
             "Each page should be 4-6 sentences."
-        )
-    else:
-        age_instructions = (
+        ),
+        'teen': (
             "Use natural, age-appropriate language with motivational themes. "
-            "Include character growth and emotional depth. Generate exactly 5 pages. "
+            "Include character growth and emotional depth. "
+            f"Generate exactly {num_pages} page(s). "
             "Each page should be 5-8 sentences."
-        )
+        ),
+    }
+    age_instructions = level_instructions.get(effective_level, level_instructions['early-reader'])
 
     # Hero characteristics block
     traits_block = ''
@@ -96,6 +135,53 @@ This child has previously enjoyed these stories: {', '.join(prev_titles)}.
 Create something NEW and different — avoid repeating the same plot or theme.
 """
 
+    # Custom settings block
+    settings_block = ''
+    settings_parts = []
+    if tone:
+        tone_map = {
+            'funny': 'Make the story funny and humorous with silly moments and jokes.',
+            'adventurous': 'Make the story action-packed and exciting with an adventurous tone.',
+            'calming': 'Make the story calm, soothing, and gentle — perfect for bedtime.',
+            'educational': 'Include educational elements and fun facts woven into the narrative.',
+        }
+        settings_parts.append(tone_map.get(tone, f'Use a {tone} tone throughout.'))
+    if theme:
+        theme_map = {
+            'superhero': 'Set in a superhero universe with capes, powers, and a heroic mission.',
+            'space': 'Set in outer space with planets, stars, rockets, and alien friends.',
+            'underwater': 'Set in an underwater world with coral reefs, friendly sea creatures, and hidden treasures.',
+            'jungle': 'Set in a lush jungle with exotic animals, vines, and ancient mysteries.',
+            'fairy-tale': 'Set in a magical fairy-tale kingdom with castles, enchanted forests, and magical creatures.',
+            'dinosaur': 'Set in a prehistoric dinosaur world with friendly dinosaurs and volcanic landscapes.',
+        }
+        settings_parts.append(theme_map.get(theme, f'Set the story in a {theme} world.'))
+    if villain_type:
+        villain_map = {
+            'monster': 'Portray the medical challenge as a silly, non-scary monster that the hero defeats.',
+            'storm': 'Portray the medical challenge as a storm that the hero learns to weather and calm.',
+            'puzzle': 'Portray the medical challenge as an exciting puzzle or riddle the hero cleverly solves.',
+            'shadow': 'Portray the medical challenge as a shadow that the hero bravely shines light upon.',
+        }
+        settings_parts.append(villain_map.get(villain_type, f'The challenge appears as {villain_type}.'))
+    if ending_type:
+        ending_map = {
+            'triumphant': 'End with a triumphant, celebratory victory.',
+            'peaceful': 'End with a peaceful, serene, and heartwarming resolution.',
+            'cliffhanger': 'End with an exciting cliffhanger that teases a future adventure.',
+        }
+        settings_parts.append(ending_map.get(ending_type, f'End with a {ending_type} ending.'))
+    if illustration_style:
+        style_map = {
+            'cartoon': 'Describe image prompts as bright cartoon-style illustrations.',
+            'watercolor': 'Describe image prompts as soft watercolor-style paintings.',
+            'comic-book': 'Describe image prompts as bold comic-book panel illustrations.',
+            'pixel-art': 'Describe image prompts as retro pixel-art style illustrations.',
+        }
+        settings_parts.append(style_map.get(illustration_style, f'Use {illustration_style} illustration style.'))
+    if settings_parts:
+        settings_block = '\nCUSTOM SETTINGS:\n' + '\n'.join(f'- {p}' for p in settings_parts) + '\n'
+
     # Main prompt
     prompt = f"""You are a compassionate children's story writer specializing in medical-sensitive storytelling.
 
@@ -111,7 +197,7 @@ CORE REQUIREMENTS:
 - Medical procedures should be described gently and positively
 - The child hero must triumph and feel proud at the end
 - Include a gentle educational element about their condition
-{traits_block}{personalization_block}{history_block}
+{traits_block}{personalization_block}{history_block}{settings_block}
 CONTENT SAFETY RULES:
 - No death, violence, or frightening scenarios
 - No explicit medical procedures or graphic descriptions
@@ -139,12 +225,35 @@ Return ONLY valid JSON with this exact structure:
 # ── Image prompt builder ─────────────────────────────────────────────
 
 def build_image_prompt(base_prompt: str, child_name: str, age: int,
-                       gender: str, page_number: int, total_pages: int) -> str:
+                       gender: str, page_number: int, total_pages: int,
+                       illustration_style: str = '') -> str:
     """Build a safe, consistent image generation prompt."""
 
+    style_presets = {
+        'watercolor': (
+            "Soft watercolor painting style. "
+            "Delicate brush strokes and pastel washes. "
+            "Gentle color bleeding and blending. "
+            "Dreamy atmospheric look. "
+        ),
+        'comic-book': (
+            "Bold comic book illustration style. "
+            "Strong outlines and dynamic poses. "
+            "Vibrant saturated colors. "
+            "Action-panel composition. "
+        ),
+        'pixel-art': (
+            "Retro pixel art style illustration. "
+            "Chunky pixel aesthetic. "
+            "Bright 16-bit color palette. "
+            "Clean pixel-perfect edges. "
+        ),
+    }
+    custom_prefix = style_presets.get(illustration_style, '')
+
     style_guidance = (
+        f"{custom_prefix}"
         "Children’s storybook illustration style."
-        "Soft watercolor and pastel art style."
         "Warm glowing lighting."
         "Magical cozy atmosphere."
         "Round cute cartoon characters with big expressive eyes."

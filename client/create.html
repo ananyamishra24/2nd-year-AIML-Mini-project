@@ -99,6 +99,100 @@
           <input type="hidden" id="heroCharacteristics" name="heroCharacteristics" />
         </div>
 
+        <!-- Story Settings (collapsible) -->
+        <div class="form-group">
+          <button type="button" class="settings-toggle" id="settings-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Customize Story Settings
+            <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          <div class="settings-panel hidden" id="settings-panel">
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" for="storyLength">Story Length</label>
+                <select id="storyLength" name="storyLength" class="form-select">
+                  <option value="">Auto (by age)</option>
+                  <option value="short">Short (1 page)</option>
+                  <option value="medium">Medium (3 pages)</option>
+                  <option value="long">Long (5 pages)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="tone">Tone</label>
+                <select id="tone" name="tone" class="form-select">
+                  <option value="">Auto</option>
+                  <option value="funny">Funny</option>
+                  <option value="adventurous">Adventurous</option>
+                  <option value="calming">Calming</option>
+                  <option value="educational">Educational</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" for="theme">Theme</label>
+                <select id="theme" name="theme" class="form-select">
+                  <option value="">Auto</option>
+                  <option value="superhero">Superhero</option>
+                  <option value="space">Space Adventure</option>
+                  <option value="underwater">Underwater</option>
+                  <option value="jungle">Jungle</option>
+                  <option value="fairy-tale">Fairy Tale</option>
+                  <option value="dinosaur">Dinosaur World</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="villainType">Villain Type</label>
+                <select id="villainType" name="villainType" class="form-select">
+                  <option value="">Auto</option>
+                  <option value="monster">Illness as a Monster</option>
+                  <option value="storm">A Storm to Weather</option>
+                  <option value="puzzle">A Puzzle to Solve</option>
+                  <option value="shadow">A Shadow to Overcome</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" for="endingType">Ending</label>
+                <select id="endingType" name="endingType" class="form-select">
+                  <option value="">Auto (triumphant)</option>
+                  <option value="triumphant">Triumphant</option>
+                  <option value="peaceful">Peaceful</option>
+                  <option value="cliffhanger">Cliffhanger</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="illustrationStyle">Illustration Style</label>
+                <select id="illustrationStyle" name="illustrationStyle" class="form-select">
+                  <option value="">Auto (cartoon)</option>
+                  <option value="cartoon">Cartoon</option>
+                  <option value="watercolor">Watercolor</option>
+                  <option value="comic-book">Comic Book</option>
+                  <option value="pixel-art">Pixel Art</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="readingLevel">Reading Level</label>
+              <select id="readingLevel" name="readingLevel" class="form-select">
+                <option value="">Auto (by age)</option>
+                <option value="toddler">Toddler (2-4)</option>
+                <option value="early-reader">Early Reader (5-7)</option>
+                <option value="older-child">Older Child (8-12)</option>
+                <option value="teen">Teen (13+)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <button type="submit" class="btn btn-primary btn-xl" id="submit-btn" style="width:100%;border-radius:1rem">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
             fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
