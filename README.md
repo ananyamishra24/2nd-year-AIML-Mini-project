@@ -288,19 +288,24 @@ To create an admin account, set `is_admin = 1` for the user in the database.
 | ![Home with stories](screenshots/home-stories.png) | ![Home empty](screenshots/home-empty.png) |
 
 ### Create a Story
-| Empty Form | Filled Form | Generating Story |
+| Empty Form | Filled Form | Custom Settings |
 |-----------|-------------|-----------------|
-| ![Create empty](screenshots/create-empty.png) | ![Create filled](screenshots/create-filled.png) | ![Generating](screenshots/generating.png) |
+| ![Create empty](screenshots/create-empty.png) | ![Create filled](screenshots/create-filled.png) | ![Custom Story Settings](screenshots/create-settings.png) |
+
+### Generating Story
+| Generating |
+|-----------|
+| ![Generating](screenshots/generating.png) |
 
 ### Story Viewer
 | Page 1 | Page 2 | Read Aloud | Translate |
 |--------|--------|-----------|-----------|
 | ![Story page 1](screenshots/story-page1.png) | ![Story page 2](screenshots/story-page2.png) | ![Narration](screenshots/story-narration.png) | ![Translate](screenshots/story-translate.png) |
 
-### Custom Story Settings
-| Create with Settings |
-|---------------------|
-| ![Custom Story Settings](screenshots/create-settings.png) |
+### Help & Support
+| Feedback Dashboard |
+|-------------------|
+| ![Help & Support](screenshots/help-support.png) |
 
 ### Credits
 | My Credits | Credit History |
@@ -311,11 +316,6 @@ To create an admin account, set `is_admin = 1` for the user in the database.
 | Admin Dashboard |
 |----------------|
 | ![Admin Dashboard](screenshots/admin-dashboard.png) |
-
-### Help & Support
-| Feedback Dashboard |
-|-------------------|
-| ![Help & Support](screenshots/help-support.png) |
 
 ---
 
