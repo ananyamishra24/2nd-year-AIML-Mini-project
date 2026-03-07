@@ -297,6 +297,26 @@ To create an admin account, set `is_admin = 1` for the user in the database.
 |--------|--------|-----------|-----------|
 | ![Story page 1](screenshots/story-page1.png) | ![Story page 2](screenshots/story-page2.png) | ![Narration](screenshots/story-narration.png) | ![Translate](screenshots/story-translate.png) |
 
+### Custom Story Settings
+| Create with Settings |
+|---------------------|
+| ![Custom Story Settings](screenshots/create-settings.png) |
+
+### Credits
+| My Credits | Credit History |
+|-----------|---------------|
+| ![My Credits](screenshots/my-credits.png) | ![Credit History](screenshots/my-credits-history.png) |
+
+### Admin Dashboard
+| Admin Dashboard |
+|----------------|
+| ![Admin Dashboard](screenshots/admin-dashboard.png) |
+
+### Help & Support
+| Feedback Page |
+|--------------|
+| ![Feedback](screenshots/feedback.png) |
+
 ---
 
 ## 📄 License
