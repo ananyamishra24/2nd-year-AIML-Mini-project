@@ -313,9 +313,9 @@ To create an admin account, set `is_admin = 1` for the user in the database.
 | ![Admin Dashboard](screenshots/admin-dashboard.png) |
 
 ### Help & Support
-| Feedback Page |
-|--------------|
-| ![Feedback](screenshots/feedback.png) |
+| Feedback Dashboard |
+|-------------------|
+| ![Help & Support](screenshots/help-support.png) |
 
 ---
 
