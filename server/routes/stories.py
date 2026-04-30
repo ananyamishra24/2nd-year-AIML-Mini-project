@@ -9,29 +9,33 @@ import os
 import json
 import time
 import logging
+import base64
+import requests
 from urllib.parse import urlparse
 
-import requests
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g, Response
 
 import database_v2 as db
 from auth import login_required
 from content_safety import validate_input, moderate_output, moderate_image_prompt, sanitize_html
 from monitoring import usage_counter, AIGenerationTracker, perf_tracker
-from prompt_manager import build_story_prompt, build_image_prompt
+from prompt_manager import build_story_prompt, build_image_prompt, build_character_description
 
 logger = logging.getLogger('brave_story.routes.stories')
 
 stories_bp = Blueprint('stories', __name__)
 
-# cloud storage is injected at registration time via init_app
+# cloud storage and rate limiter injected at registration time
 _image_storage = None
+_limiter = None
 
 
-def init_stories_bp(image_storage):
-    """Inject the image storage backend so the blueprint can save images."""
-    global _image_storage
+def init_stories_bp(image_storage, limiter=None):
+    """Inject the image storage backend and rate limiter into the blueprint."""
+    global _image_storage, _limiter
     _image_storage = image_storage
+    if limiter:
+        limiter.limit("5 per minute")(generate_story)
 
 
 def _refresh_image_urls(story):
@@ -114,6 +118,9 @@ def add_child():
     age = data.get('age')
     gender = (data.get('gender') or 'neutral').strip()
     conditions = data.get('conditions', [])
+    medical_challenge = (data.get('medicalChallenge') or '').strip()
+    characteristics = (data.get('characteristics') or '').strip()
+    hero_character = data.get('heroCharacter')  # dict or None
 
     if not name or len(name) < 1 or len(name) > 50:
         return jsonify({'message': 'Child name must be 1-50 characters'}), 400
@@ -126,12 +133,23 @@ def add_child():
     for c in conditions:
         if not isinstance(c, str) or len(c) > 200:
             return jsonify({'message': 'Each condition must be a string (max 200 chars)'}), 400
+    if len(medical_challenge) > 300:
+        return jsonify({'message': 'Medical challenge must be under 300 characters'}), 400
+    if len(characteristics) > 500:
+        return jsonify({'message': 'Characteristics must be under 500 characters'}), 400
+    if hero_character is not None and not isinstance(hero_character, dict):
+        return jsonify({'message': 'heroCharacter must be an object'}), 400
 
     # Sanitize text inputs before storage (XSS prevention)
     name = sanitize_html(name)
     conditions = [sanitize_html(c) for c in conditions]
+    medical_challenge = sanitize_html(medical_challenge)
+    characteristics = sanitize_html(characteristics)
 
-    child = db.create_child(g.user_id, name, age, gender, conditions)
+    child = db.create_child(g.user_id, name, age, gender, conditions,
+                            medical_challenge=medical_challenge,
+                            characteristics=characteristics,
+                            hero_character=hero_character)
     return jsonify(child), 201
 
 
@@ -146,6 +164,14 @@ def update_child(child_id):
         data['name'] = sanitize_html(data['name'].strip())
     if 'conditions' in data and isinstance(data['conditions'], list):
         data['conditions'] = [sanitize_html(c) for c in data['conditions'] if isinstance(c, str)]
+    if 'medicalChallenge' in data and isinstance(data['medicalChallenge'], str):
+        data['medical_challenge'] = sanitize_html(data.pop('medicalChallenge').strip())
+    elif 'medicalChallenge' in data:
+        data.pop('medicalChallenge')
+    if 'characteristics' in data and isinstance(data['characteristics'], str):
+        data['characteristics'] = sanitize_html(data['characteristics'].strip())
+    if 'heroCharacter' in data:
+        data['hero_character'] = data.pop('heroCharacter')  # rename to DB column
 
     child = db.update_child(child_id, user_id=g.user_id, **data)
     if not child:
@@ -210,12 +236,32 @@ def toggle_favorite(story_id):
     return jsonify(story)
 
 
+def _generate_image_azure_gpt(api_key, endpoint, prompt):
+    """Generate an image via Azure OpenAI gpt-image-1.5 and return raw image bytes."""
+    headers = {
+        'api-key': api_key,
+        'Content-Type': 'application/json',
+    }
+    payload = {
+        'prompt': prompt,
+        'n': 1,
+        'size': '1024x1024',
+    }
+    resp = requests.post(endpoint, headers=headers, json=payload, timeout=120)
+    resp.raise_for_status()
+    data = resp.json()
+    b64 = data['data'][0].get('b64_json')
+    if b64:
+        return base64.b64decode(b64)
+    return None
+
+
 # ── Story Generation ─────────────────────────────────────────────────
 
 @stories_bp.route('/api/stories/generate', methods=['POST'])
 @login_required
 def generate_story():
-    """Generate a new story using Gemini + Flux 2 Pro.
+    """Generate a new story using Claude Sonnet 4.6 + Azure gpt-image-1.5.
 
     Accepts JSON with ``childName``, ``age``, ``gender``, ``condition``,
     ``heroCharacteristics``, and optional ``childId``.  Validates all
@@ -226,12 +272,33 @@ def generate_story():
 
     try:
         data = request.get_json()
-        child_name = (data.get('childName') or '').strip()
-        age = int(data.get('age', 6))
-        gender = (data.get('gender') or 'neutral').strip()
-        condition = (data.get('condition') or '').strip()
-        hero_characteristics = (data.get('heroCharacteristics') or '').strip()
         child_id = data.get('childId')
+
+        # If a hero profile is linked, auto-fill hero fields from it
+        child_profile = None
+        if child_id:
+            if not db.verify_child_owner(child_id, user_id):
+                return jsonify({'message': 'Child profile not found'}), 404
+            child_profile = db.get_child(child_id)
+
+        if child_profile:
+            child_name = child_profile.get('name', '').strip()
+            age = int(child_profile.get('age', 6))
+            gender = child_profile.get('gender', 'neutral').strip()
+            # Prefer rich text medical_challenge; fall back to conditions list
+            mc = child_profile.get('medicalChallenge', '').strip()
+            if not mc and child_profile.get('conditions'):
+                mc = ', '.join(child_profile['conditions'])
+            condition = mc or (data.get('condition') or '').strip()
+            hero_characteristics = child_profile.get('characteristics', '').strip() or (data.get('heroCharacteristics') or '').strip()
+            hero_character = child_profile.get('heroCharacter') or data.get('heroCharacter')
+        else:
+            child_name = (data.get('childName') or '').strip()
+            age = int(data.get('age', 6))
+            gender = (data.get('gender') or 'neutral').strip()
+            condition = (data.get('condition') or '').strip()
+            hero_characteristics = (data.get('heroCharacteristics') or '').strip()
+            hero_character = data.get('heroCharacter')
 
         # Custom story settings
         story_length = (data.get('storyLength') or '').strip()
@@ -241,6 +308,11 @@ def generate_story():
         ending_type = (data.get('endingType') or '').strip()
         illustration_style = (data.get('illustrationStyle') or '').strip()
         reading_level = (data.get('readingLevel') or '').strip()
+
+        # Optional character builder data
+        character_description = ''
+        if hero_character and isinstance(hero_character, dict):
+            character_description = build_character_description(hero_character)
 
         # 0. Content safety: validate & moderate input
         valid, error = validate_input(child_name, age, condition, hero_characteristics)
@@ -252,22 +324,22 @@ def generate_story():
         preferences = []
         story_history = []
         if child_id:
-            if not db.verify_child_owner(child_id, user_id):
-                return jsonify({'message': 'Child profile not found'}), 404
             try:
                 preferences = db.get_preferences(child_id)
                 story_history = db.get_child_story_history(child_id)
             except Exception as e:
                 logger.warning(f'Failed to load personalization: {e}')
 
-        # 1. Generate story text with Gemini
-        gemini_key = os.environ.get('GEMINI_API_KEY', '')
-        if not gemini_key:
-            return jsonify({'message': 'GEMINI_API_KEY not configured'}), 500
+        # 1. Generate story text with Claude Sonnet 4.6 (Azure AI Foundry)
+        claude_key = os.environ.get('CLAUDE_API_KEY', '')
+        claude_endpoint = os.environ.get('CLAUDE_ENDPOINT', '')
+        claude_model = os.environ.get('CLAUDE_MODEL', 'claude-sonnet-4-6')
+        if not claude_key or not claude_endpoint:
+            return jsonify({'message': 'CLAUDE_API_KEY / CLAUDE_ENDPOINT not configured'}), 500
 
-        import google.generativeai as genai
+        from anthropic import AnthropicFoundry
 
-        genai.configure(api_key=gemini_key)  # type: ignore[attr-defined]
+        anthropic_client = AnthropicFoundry(api_key=claude_key, base_url=claude_endpoint)
 
         prompt = build_story_prompt(
             child_name=child_name, age=age, gender=gender,
@@ -276,15 +348,19 @@ def generate_story():
             story_length=story_length, tone=tone, theme=theme,
             villain_type=villain_type, ending_type=ending_type,
             illustration_style=illustration_style, reading_level=reading_level,
+            character_description=character_description,
         )
 
-        with AIGenerationTracker('gemini', 'gemini-2.5-flash'):
-            gemini_start = time.time()
-            model = genai.GenerativeModel('gemini-2.5-flash')  # type: ignore[attr-defined]
-            result = model.generate_content(prompt)
-            content = result.text.strip()
-            gemini_ms = int((time.time() - gemini_start) * 1000)
-            usage_counter.record('gemini', success=True)
+        with AIGenerationTracker('claude', claude_model):
+            claude_start = time.time()
+            result = anthropic_client.messages.create(
+                model=claude_model,
+                max_tokens=4096,
+                messages=[{'role': 'user', 'content': prompt}],
+            )
+            content = result.content[0].text.strip()
+            claude_ms = int((time.time() - claude_start) * 1000)
+            usage_counter.record('claude', success=True)
 
         # Strip markdown code fences if present
         if content.startswith('```json'):
@@ -311,75 +387,40 @@ def generate_story():
         if all_moderation_flags:
             logger.warning(f'Moderation flags for story: {all_moderation_flags}')
 
-        db.log_api_call('gemini', 'gemini-2.5-flash', True,
+        db.log_api_call('claude', claude_model, True,
                         int((time.time() - start_time) * 1000), user_id=user_id)
 
-        # 2. Generate images with Flux 2 Pro
-        flux_key = os.environ.get('FLUX2PRO_API_KEY', '')
-        flux_endpoint = os.environ.get('FLUX2PRO_ENDPOINT', '')
+        # 2. Generate images with Azure gpt-image-1.5
+        azure_img_key = os.environ.get('AZURE_GPT_IMAGE_API_KEY', '')
+        azure_img_endpoint = os.environ.get('AZURE_GPT_IMAGE_ENDPOINT', '')
+
         pages_with_images = []
-        flux_start = time.time()
+        imagen_start = time.time()
 
         for idx, page in enumerate(story_data['pages']):
             image_url = None
-            if flux_key and flux_endpoint and _image_storage:
+            img_prompt = build_image_prompt(
+                page['imagePrompt'], child_name, age,
+                gender, idx + 1, len(story_data['pages']),
+                illustration_style=illustration_style,
+                character_description=character_description,
+            )
+
+            if azure_img_key and azure_img_endpoint and _image_storage:
                 try:
-                    import base64
-                    img_prompt = build_image_prompt(
-                        page['imagePrompt'], child_name, age,
-                        gender, idx + 1, len(story_data['pages']),
-                        illustration_style=illustration_style,
-                    )
-
-                    max_retries = 2
-                    last_err = None
-                    for attempt in range(1, max_retries + 1):
-                        try:
-                            with AIGenerationTracker('flux2pro', 'flux-2-pro', page_num=idx + 1):
-                                gen_resp = requests.post(
-                                    flux_endpoint,
-                                    headers={
-                                        'Authorization': f'Bearer {flux_key}',
-                                        'Content-Type': 'application/json',
-                                    },
-                                    json={
-                                        'prompt': img_prompt,
-                                        'width': 1024,
-                                        'height': 1024,
-                                        'n': 1,
-                                        'model': 'FLUX.2-pro',
-                                    },
-                                    timeout=180,
-                                )
-                                gen_resp.raise_for_status()
-                                gen_data = gen_resp.json()
-
-                                b64_str = (gen_data.get('data') or [{}])[0].get('b64_json')
-                                if b64_str:
-                                    img_bytes = base64.b64decode(b64_str)
-                                    img_name = f'story_{int(time.time())}_{idx + 1}.png'
-                                    image_url = _image_storage.save_image(img_bytes, img_name)
-                                    logger.info(f'Image saved (page {idx + 1}): {img_name}')
-
-                                usage_counter.record('flux2pro', success=bool(image_url))
-                                db.log_api_call('flux2pro', 'flux-2-pro', bool(image_url),
-                                                user_id=user_id)
-                                last_err = None
-                                break
-
-                        except Exception as retry_e:
-                            last_err = retry_e
-                            logger.warning(f'Flux attempt {attempt}/{max_retries} failed: {retry_e}')
-                            if attempt < max_retries:
-                                time.sleep(2)
-
-                    if last_err:
-                        raise last_err
-
+                    with AIGenerationTracker('azure_gpt_image', 'gpt-image-1.5', page_num=idx + 1):
+                        img_bytes = _generate_image_azure_gpt(azure_img_key, azure_img_endpoint, img_prompt)
+                    if img_bytes:
+                        img_name = f'story_{int(time.time())}_{idx + 1}.png'
+                        image_url = _image_storage.save_image(img_bytes, img_name)
+                        logger.info(f'Image saved via Azure gpt-image-1.5 (page {idx + 1}): {img_name}')
+                    usage_counter.record('azure_gpt_image', success=bool(image_url))
+                    db.log_api_call('azure_gpt_image', 'gpt-image-1.5', bool(image_url),
+                                    user_id=user_id)
                 except Exception as e:
-                    logger.error(f'Image generation error page {idx + 1}: {e}')
-                    usage_counter.record('flux2pro', success=False)
-                    db.log_api_call('flux2pro', 'flux-2-pro', False,
+                    logger.error(f'Azure image generation error page {idx + 1}: {e}')
+                    usage_counter.record('azure_gpt_image', success=False)
+                    db.log_api_call('azure_gpt_image', 'gpt-image-1.5', False,
                                     error_message=str(e), user_id=user_id)
 
             pages_with_images.append({
@@ -390,7 +431,7 @@ def generate_story():
 
         # 3. Save to DB
         generation_time_ms = int((time.time() - start_time) * 1000)
-        flux_ms = int((time.time() - flux_start) * 1000)
+        imagen_ms = int((time.time() - imagen_start) * 1000)
         story = db.create_story(
             child_name=child_name, age=age, gender=gender,
             condition=condition, hero_characteristics=hero_characteristics,
@@ -398,6 +439,7 @@ def generate_story():
             pages=pages_with_images, user_id=user_id,
             child_id=child_id, moderation_flags=all_moderation_flags,
             generation_time_ms=generation_time_ms,
+            hero_character=hero_character,
         )
 
         if not story:
@@ -405,8 +447,8 @@ def generate_story():
 
         perf_tracker.record_generation(
             story_id=story.get('id', 0),
-            gemini_ms=gemini_ms,
-            flux_ms=flux_ms,
+            claude_ms=claude_ms,
+            flux_ms=imagen_ms,
             total_ms=generation_time_ms,
             pages=len(pages_with_images),
         )
@@ -416,7 +458,7 @@ def generate_story():
 
     except json.JSONDecodeError as e:
         logger.error(f'JSON parse error: {e}')
-        usage_counter.record('gemini', success=False)
+        usage_counter.record('claude', success=False)
         perf_tracker.record_error('JSONDecodeError')
         return jsonify({'message': 'Failed to parse story from AI response'}), 500
     except Exception as e:

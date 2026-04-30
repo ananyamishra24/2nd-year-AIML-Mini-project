@@ -268,7 +268,7 @@
 }
 
 .chart-bar.flux { background: linear-gradient(180deg, #7c3aed, #a78bfa); }
-.chart-bar.gemini { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
+.chart-bar.claude { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
 
 .chart-bar:hover {
   opacity: .85;
@@ -305,7 +305,7 @@
 }
 
 .chart-legend-dot.flux { background: #7c3aed; }
-.chart-legend-dot.gemini { background: #3b82f6; }
+.chart-legend-dot.claude { background: #3b82f6; }
 
 /* ── Badge / Tag ─────────────────────────────────────── */
 .badge {

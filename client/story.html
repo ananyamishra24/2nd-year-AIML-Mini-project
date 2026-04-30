@@ -118,6 +118,11 @@
             <label class="popover-label" for="voice-select">Voice</label>
             <select class="popover-select" id="voice-select"></select>
           </div>
+          <div id="el-badge" style="display:none;margin-top:.75rem;padding:.4rem .75rem;
+            background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.15);
+            border-radius:.625rem;text-align:center;font-size:.7rem;font-weight:700;color:var(--primary)">
+            ✨ gpt-4o-mini-tts
+          </div>
         </div>
       </div>
 
@@ -163,11 +168,18 @@
     </button>
   </footer>
 
+  <div class="auto-advance-widget hidden" id="auto-advance-widget" aria-live="polite">
+    <span class="auto-advance-text">Next page in <strong id="auto-advance-count">5</strong>s</span>
+    <button class="btn btn-secondary btn-sm auto-advance-btn auto-advance-replay" id="auto-advance-replay">Replay</button>
+    <button class="btn btn-primary btn-sm auto-advance-btn auto-advance-skip" id="auto-advance-skip">Skip</button>
+  </div>
+
 </div>
 
 <!-- TOAST -->
 <div class="toast-container" id="toast-container"></div>
 
 <script src="/js/story.js"></script>
+<script type="module" src="/js/balloons-init.js"></script>
 </body>
 </html>

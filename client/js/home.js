@@ -6,6 +6,25 @@ let allStories  = [];
 let favStories  = [];
 
 // ── Toast ──────────────────────────────────────────────
+
+function getActiveChild() {
+  try {
+    return JSON.parse(localStorage.getItem('cc_active_child'));
+  } catch {
+    return null;
+  }
+}
+
+function filterByActiveChild(stories) {
+  const active = getActiveChild();
+  if (!active) return stories;
+  return stories.filter(s => {
+    if (s.child_id != null) return Number(s.child_id) === Number(active.id);
+    if (s.childId != null) return Number(s.childId) === Number(active.id);
+    const childName = (s.child_name || s.childName || '').toString().trim();
+    return childName && childName === active.name;
+  });
+}
 function showToast(msg, type = 'success') {
   const c = document.getElementById('toast-container');
   const t = document.createElement('div');
@@ -28,12 +47,38 @@ async function loadStories() {
   const grid = document.getElementById('stories-grid');
   grid.innerHTML = skeletons(6);
   try {
+    const token = localStorage.getItem('cc_token');
+    if (!token) {
+      allStories = [];
+      favStories = [];
+      render();
+      return;
+    }
+
     const [allRes, favRes] = await Promise.all([
       fetch('/api/stories', { headers: authHeaders() }),
       fetch('/api/stories/favorites', { headers: authHeaders() }),
     ]);
-    allStories = await allRes.json();
-    favStories = await favRes.json();
+
+    if (allRes.status === 401 || favRes.status === 401) {
+      allStories = [];
+      favStories = [];
+      render();
+      return;
+    }
+
+    if (!allRes.ok) throw new Error(`Stories request failed: ${allRes.status}`);
+
+    const allData = await allRes.json();
+    allStories = Array.isArray(allData) ? allData : [];
+
+    if (favRes.ok) {
+      const favData = await favRes.json();
+      favStories = Array.isArray(favData) ? favData : [];
+    } else {
+      favStories = [];
+    }
+
     render();
   } catch {
     grid.innerHTML = '<p style="color:var(--destructive);padding:2rem;text-align:center">Failed to load stories.</p>';
@@ -46,7 +91,8 @@ function skeletons(n) {
 
 // ── Render ─────────────────────────────────────────────
 function render() {
-  const stories = activeTab === 'all' ? allStories : favStories;
+  const baseStories = activeTab === 'all' ? allStories : favStories;
+  const stories = filterByActiveChild(baseStories);
   const grid    = document.getElementById('stories-grid');
   const count   = document.getElementById('stories-count');
 
@@ -188,6 +234,101 @@ function escHtml(str) {
   return d.innerHTML;
 }
 
+// ── Hero Switcher ──────────────────────────────────────
+const HERO_PALETTE = ['#9b6dff','#f59e0b','#22d3ee','#f472b6','#4ade80','#fb923c'];
+let _heroClickOutside = null;
+
+async function initHeroSwitcher() {
+  const slot = document.getElementById('hero-switcher-slot');
+  if (!slot) return;
+
+  // Clean up any previous outside-click listener
+  if (_heroClickOutside) { document.removeEventListener('click', _heroClickOutside); _heroClickOutside = null; }
+
+  let children = [];
+  try {
+    const res = await fetch('/api/children', { headers: authHeaders() });
+    if (res.ok) children = await res.json();
+  } catch {}
+
+  if (!Array.isArray(children) || !children.length) { slot.innerHTML = ''; return; }
+
+  let active = null;
+  try { active = JSON.parse(localStorage.getItem('cc_active_child')); } catch {}
+  if (!active || !children.find(c => c.id === active.id)) {
+    active = children[0];
+    localStorage.setItem('cc_active_child', JSON.stringify(active));
+  }
+
+  const activeIdx = children.findIndex(c => c.id === active.id);
+  const activeColor = HERO_PALETTE[activeIdx % HERO_PALETTE.length];
+
+  const itemsHtml = children.map((c, i) => {
+    const color = HERO_PALETTE[i % HERO_PALETTE.length];
+    const isActive = c.id === active.id;
+    return `<button class="hero-chip-item${isActive ? ' active' : ''}" data-id="${c.id}" role="menuitem">
+      <div class="hero-chip-item-avatar" style="background:${color}">${escHtml(c.name[0].toUpperCase())}</div>
+      <span>${escHtml(c.name)}</span>
+      ${isActive ? `<svg class="check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+    </button>`;
+  }).join('');
+
+  slot.innerHTML = `
+    <div class="hero-switcher" id="hero-switcher">
+      <button class="hero-chip" id="hero-chip" aria-haspopup="true" aria-expanded="false" title="Switch hero">
+        <div class="hero-chip-avatar" style="background:${activeColor}">${escHtml(active.name[0].toUpperCase())}</div>
+        <span class="hero-chip-name">${escHtml(active.name)}</span>
+        <svg class="hero-chip-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="hero-chip-dropdown" id="hero-chip-dropdown" role="menu">
+        <div class="hero-chip-header">Switch Hero</div>
+        ${itemsHtml}
+        <div class="hero-chip-divider"></div>
+        <a href="/profiles" class="hero-chip-item" role="menuitem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Manage Heroes
+        </a>
+      </div>
+    </div>`;
+
+  const chip = document.getElementById('hero-chip');
+  const dropdown = document.getElementById('hero-chip-dropdown');
+  let open = false;
+
+  function toggleChip(force) {
+    open = typeof force === 'boolean' ? force : !open;
+    dropdown.classList.toggle('open', open);
+    chip.setAttribute('aria-expanded', String(open));
+  }
+
+  chip.addEventListener('click', e => { e.stopPropagation(); toggleChip(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && open) toggleChip(false); });
+
+  _heroClickOutside = e => {
+    if (open && !slot.contains(e.target)) toggleChip(false);
+  };
+  document.addEventListener('click', _heroClickOutside);
+
+  dropdown.querySelectorAll('.hero-chip-item[data-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const child = children.find(c => c.id === Number(btn.dataset.id));
+      if (child) {
+        localStorage.setItem('cc_active_child', JSON.stringify(child));
+        toggleChip(false);
+        initHeroSwitcher();
+        render();
+      }
+    });
+  });
+}
+
 // ── Init ───────────────────────────────────────────────
 document.getElementById('tab-all').addEventListener('click', () => { activeTab = 'all'; render(); });
 document.getElementById('tab-fav').addEventListener('click', () => { activeTab = 'favorites'; render(); });
@@ -203,3 +344,4 @@ document.getElementById('modal-confirm').addEventListener('click', async () => {
 });
 
 loadStories();
+initHeroSwitcher();

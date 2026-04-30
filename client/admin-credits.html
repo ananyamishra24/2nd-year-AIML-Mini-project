@@ -49,7 +49,7 @@
       </svg>
       Credit Usage Dashboard
     </h1>
-    <p>Monitor Flux 2 Pro and Gemini API credit consumption in real time</p>
+    <p>Monitor Flux 2 Pro and Claude API credit consumption in real time</p>
   </div>
 
   <!-- ── Stat Cards ──────────────────────────────────── -->
@@ -97,7 +97,7 @@
       </div>
       <div class="chart-legend">
         <div class="chart-legend-item"><div class="chart-legend-dot flux"></div> Flux 2 Pro</div>
-        <div class="chart-legend-item"><div class="chart-legend-dot gemini"></div> Gemini</div>
+        <div class="chart-legend-item"><div class="chart-legend-dot claude"></div> Claude</div>
       </div>
     </div>
 
@@ -228,7 +228,7 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Gemini (ms)</th>
+              <th>Claude (ms)</th>
               <th>Flux (ms)</th>
               <th>Total (ms)</th>
               <th>Time</th>
@@ -256,8 +256,8 @@
         <input type="number" id="cfg-flux-cost" step="0.001" min="0" value="0.05" />
       </div>
       <div class="config-field">
-        <label for="cfg-gemini-cost">Gemini Cost / Call ($)</label>
-        <input type="number" id="cfg-gemini-cost" step="0.001" min="0" value="0.01" />
+        <label for="cfg-claude-cost">Claude Cost / Call ($)</label>
+        <input type="number" id="cfg-claude-cost" step="0.001" min="0" value="0.01" />
       </div>
       <div class="config-field" style="display:flex;align-items:flex-end">
         <button class="btn btn-primary btn-sm" onclick="saveConfig()" style="padding:.55rem 1.5rem">

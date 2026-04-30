@@ -79,10 +79,10 @@ async function loadAll() {
 function renderStats(data) {
   const row = document.getElementById('stats-row');
   const flux = data.by_api.flux2pro || {};
-  const gemini = data.by_api.gemini || {};
-  const totalCalls = (flux.total_calls || 0) + (gemini.total_calls || 0);
+  const claude = data.by_api.claude || {};
+  const totalCalls = (flux.total_calls || 0) + (claude.total_calls || 0);
   const successRate = totalCalls > 0
-    ? Math.round(((flux.successes || 0) + (gemini.successes || 0)) / totalCalls * 100) : 0;
+    ? Math.round(((flux.successes || 0) + (claude.successes || 0)) / totalCalls * 100) : 0;
 
   row.innerHTML = `
     <div class="stat-card purple">
@@ -124,9 +124,9 @@ function renderStats(data) {
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
         </svg>
       </div>
-      <div class="stat-label">Gemini</div>
-      <div class="stat-value">${gemini.total_calls || 0}</div>
-      <div class="stat-sub">$${(gemini.total_credits || 0).toFixed(2)} credits · ${gemini.successes || 0} success</div>
+      <div class="stat-label">Claude</div>
+      <div class="stat-value">${claude.total_calls || 0}</div>
+      <div class="stat-sub">$${(claude.total_credits || 0).toFixed(2)} credits · ${claude.successes || 0} success</div>
     </div>
 
     <div class="stat-card rose">
@@ -137,7 +137,7 @@ function renderStats(data) {
       </div>
       <div class="stat-label">Success Rate</div>
       <div class="stat-value">${successRate}%</div>
-      <div class="stat-sub">${(flux.failures || 0) + (gemini.failures || 0)} failures total</div>
+      <div class="stat-sub">${(flux.failures || 0) + (claude.failures || 0)} failures total</div>
     </div>
   `;
 }
@@ -168,7 +168,7 @@ function renderApiBreakdown(data) {
   for (const [name, info] of Object.entries(apis)) {
     const successPct = info.total_calls > 0
       ? Math.round(info.successes / info.total_calls * 100) : 0;
-    const colorCls = name === 'flux2pro' ? 'purple' : name === 'gemini' ? 'blue' : 'amber';
+    const colorCls = name === 'flux2pro' ? 'purple' : name === 'claude' ? 'blue' : 'amber';
     html += `
       <div style="margin-bottom:1.25rem;padding:1rem;background:rgba(124,58,237,.02);border-radius:var(--radius-sm)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
@@ -217,22 +217,22 @@ function renderHistoryChart(history) {
   const dates = Object.keys(byDate).sort();
   const maxCredits = Math.max(...dates.map(d => {
     const v = byDate[d];
-    return (v.flux2pro || 0) + (v.gemini || 0);
+    return (v.flux2pro || 0) + (v.claude || 0);
   }), 0.01);
 
   let barsHtml = '';
   dates.forEach(date => {
     const d = byDate[date];
     const fluxH = ((d.flux2pro || 0) / maxCredits * 170);
-    const geminiH = ((d.gemini || 0) / maxCredits * 170);
+    const claudeH = ((d.claude || 0) / maxCredits * 170);
     const shortDate = date.slice(5); // MM-DD
     barsHtml += `
       <div class="chart-bar-col">
         <div style="display:flex;gap:2px;align-items:flex-end;height:100%">
           <div class="chart-bar flux" style="height:${Math.max(fluxH, 2)}px"
                data-tooltip="Flux: $${(d.flux2pro || 0).toFixed(3)}"></div>
-          <div class="chart-bar gemini" style="height:${Math.max(geminiH, 2)}px"
-               data-tooltip="Gemini: $${(d.gemini || 0).toFixed(3)}"></div>
+          <div class="chart-bar claude" style="height:${Math.max(claudeH, 2)}px"
+               data-tooltip="Claude: $${(d.claude || 0).toFixed(3)}"></div>
         </div>
         <div class="chart-bar-label">${shortDate}</div>
       </div>`;
@@ -289,7 +289,7 @@ async function loadConfig() {
     const config = await res.json();
     document.getElementById('cfg-budget').value = config.total_budget || 1000;
     document.getElementById('cfg-flux-cost').value = config.flux2pro_cost_per_image || 0.05;
-    document.getElementById('cfg-gemini-cost').value = config.gemini_cost_per_call || 0.01;
+    document.getElementById('cfg-claude-cost').value = config.claude_cost_per_call || 0.01;
   } catch (e) {
     console.error('Failed to load config:', e);
   }
@@ -300,7 +300,7 @@ async function saveConfig() {
     const body = {
       total_budget: parseFloat(document.getElementById('cfg-budget').value),
       flux2pro_cost_per_image: parseFloat(document.getElementById('cfg-flux-cost').value),
-      gemini_cost_per_call: parseFloat(document.getElementById('cfg-gemini-cost').value),
+      claude_cost_per_call: parseFloat(document.getElementById('cfg-claude-cost').value),
     };
     const res = await fetch('/api/admin/credits/config', {
       method: 'PUT',
@@ -497,8 +497,8 @@ function renderPerfGeneration(avg) {
   el.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem">
       <div style="padding:1rem;background:rgba(59,130,246,.05);border-radius:.75rem;text-align:center">
-        <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted-fg);margin-bottom:.25rem">Gemini</div>
-        <div style="font-size:1.5rem;font-weight:700;color:#3b82f6">${avg.gemini_ms}ms</div>
+        <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted-fg);margin-bottom:.25rem">Claude</div>
+        <div style="font-size:1.5rem;font-weight:700;color:#3b82f6">${avg.claude_ms}ms</div>
       </div>
       <div style="padding:1rem;background:rgba(124,58,237,.05);border-radius:.75rem;text-align:center">
         <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--muted-fg);margin-bottom:.25rem">Flux</div>
@@ -538,7 +538,7 @@ function renderPerfRecent(recent) {
   tbody.innerHTML = recent.map(r => {
     const time = r.timestamp ? new Date(r.timestamp * 1000).toLocaleString() : '—';
     return `<tr>
-      <td>${r.gemini_ms}ms</td>
+      <td>${r.claude_ms}ms</td>
       <td>${r.flux_ms}ms</td>
       <td style="font-weight:700">${r.total_ms}ms</td>
       <td>${time}</td>

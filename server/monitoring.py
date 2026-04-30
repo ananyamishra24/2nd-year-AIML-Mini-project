@@ -269,10 +269,10 @@ class PerformanceTracker:
         self._request_count = 0
         self._error_request_count = 0
 
-    def record_generation(self, story_id, gemini_ms=0, flux_ms=0, total_ms=0, pages=0):
+    def record_generation(self, story_id, claude_ms=0, flux_ms=0, total_ms=0, pages=0):
         self._generation_times.append({
             'story_id': story_id,
-            'gemini_ms': gemini_ms,
+            'claude_ms': claude_ms,
             'flux_ms': flux_ms,
             'total_ms': total_ms,
             'pages': pages,
@@ -295,9 +295,9 @@ class PerformanceTracker:
 
         # Compute generation averages
         times = list(self._generation_times)
-        avg_gemini = avg_flux = avg_total = 0
+        avg_claude = avg_flux = avg_total = 0
         if times:
-            avg_gemini = int(sum(t['gemini_ms'] for t in times) / len(times))
+            avg_claude = int(sum(t['claude_ms'] for t in times) / len(times))
             avg_flux = int(sum(t['flux_ms'] for t in times) / len(times))
             avg_total = int(sum(t['total_ms'] for t in times) / len(times))
 
@@ -314,7 +314,7 @@ class PerformanceTracker:
             'error_rate_pct': error_rate,
             'errors': self._error_counts,
             'generation_avg': {
-                'gemini_ms': avg_gemini,
+                'claude_ms': avg_claude,
                 'flux_ms': avg_flux,
                 'total_ms': avg_total,
                 'sample_size': len(times),

@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who's reading? · CartoonCare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css" />
+<style>
+
+/* ── Tokens (mirrors styles.css) ─────────────────────────── */
+:root {
+  --primary:       #7c3aed;
+  --primary-light: #ede9fe;
+  --primary-hover: #6d28d9;
+  --accent:        #f59e0b;
+  --accent-light:  #fef3c7;
+  --destructive:   #ef4444;
+  --bg:            #fffdf5;
+  --fg:            #1e1b4b;
+  --muted-fg:      #6b7280;
+  --border:        #ddd6fe;
+  --card:          #ffffff;
+
+  --c0: #9b6dff; --c0r: 155,109,255;
+  --c1: #f59e0b; --c1r: 245,158,11;
+  --c2: #22d3ee; --c2r: 34,211,238;
+  --c3: #f472b6; --c3r: 244,114,182;
+  --c4: #4ade80; --c4r: 74,222,128;
+  --c5: #fb923c; --c5r: 251,146,60;
+
+  --ff-head: 'Fredoka', sans-serif;
+  --ff-body: 'Quicksand', 'Nunito', sans-serif;
+}
+
+/* ── Blob border-radius shapes ───────────────────────────── */
+.br0 { --br: 42% 58% 38% 62% / 50% 36% 64% 50%; }
+.br1 { --br: 36% 64% 44% 56% / 42% 50% 50% 58%; }
+.br2 { --br: 54% 46% 36% 64% / 38% 62% 38% 62%; }
+.br3 { --br: 40% 60% 56% 44% / 62% 38% 62% 38%; }
+.br4 { --br: 48% 52% 42% 58% / 55% 45% 55% 45%; }
+.br5 { --br: 60% 40% 50% 50% / 40% 60% 40% 60%; }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--ff-body);
+  background-color: var(--bg);
+  color: var(--fg);
+  min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  overflow: hidden; position: relative; user-select: none;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(255,200,190,.14) 0%, transparent 28%),
+    radial-gradient(circle at 90% 80%, rgba(199,210,240,.2) 0%, transparent 32%);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Decorative colour blobs (matches auth-bg style) ─────── */
+.blob { position: fixed; border-radius: 50%; filter: blur(72px); pointer-events: none; z-index: 0; }
+.blob-1 { top: -8%;    right: -6%; width: 26rem; height: 26rem; background: rgba(124,58,237,.09); }
+.blob-2 { bottom: -10%;left: -8%; width: 30rem; height: 30rem; background: rgba(56,189,248,.07);  }
+.blob-3 { top: 38%;    left: 50%;  width: 20rem; height: 20rem; background: rgba(245,158,11,.06); transform: translateX(-50%); }
+
+/* ── CartoonCare logo — top-left (Netflix logo position) ─── */
+.logo {
+  position: fixed; top: 24px; left: 32px; z-index: 10;
+  display: flex; align-items: center; gap: 9px; text-decoration: none;
+}
+.logo-gem {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(124,58,237,.35);
+}
+.logo-word {
+  font-family: var(--ff-head); font-size: 1.35rem; font-weight: 700;
+  color: var(--primary); letter-spacing: .01em;
+}
+
+/* ── Page shell ──────────────────────────────────────────── */
+.page {
+  position: relative; z-index: 1;
+  text-align: center;
+  padding: 2rem 2rem 3.5rem;
+  animation: fade-up .5s ease both;
+}
+@keyframes fade-up { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:none} }
+
+/* ── Heading ─────────────────────────────────────────────── */
+h1 {
+  font-family: var(--ff-head);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  color: var(--fg);
+  margin-bottom: 3rem;
+  transition: opacity .3s ease;
+}
+
+/* ── Profiles grid ───────────────────────────────────────── */
+.profiles {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+/* ── Individual profile card ─────────────────────────────── */
+.profile {
+  cursor: pointer; text-align: center; position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Character wrapper  ──────────────────────────────────── */
+.char-wrap {
+  width: 150px; height: 150px;
+  border-radius: 20px;
+  border: 3px solid transparent;
+  position: relative;
+  transition: border-color .2s ease, transform .35s cubic-bezier(.34,1.4,.64,1),
+              box-shadow .25s ease;
+}
+.profile:hover:not(.manage-mode) .char-wrap {
+  border-color: var(--char-color);
+  transform: translateY(-8px) scale(1.04);
+  box-shadow: 0 16px 40px rgba(var(--char-r), .22);
+}
+
+/* ── Fuzzy blob ──────────────────────────────────────────── */
+.fuzzy {
+  width: 150px; height: 150px;
+  border-radius: var(--br);
+  background: var(--char-color);
+  position: relative; filter: url(#fur); isolation: isolate; overflow: hidden;
+  animation: bob var(--fd,4.2s) var(--fl,0s) ease-in-out infinite;
+}
+.profile.selecting .fuzzy,
+.profile.manage-mode .fuzzy { animation-play-state: paused; }
+.fuzzy::before {
+  content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 22%, rgba(255,255,255,.42) 0%, transparent 100%),
+    radial-gradient(ellipse 50% 60% at 72% 78%, rgba(0,0,0,.2)  0%, transparent 100%);
+}
+@keyframes bob { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-10px) rotate(1deg)} }
+
+/* ── Face ────────────────────────────────────────────────── */
+.face { position:absolute; top:50%; left:50%; transform:translate(-50%,-52%); width:72px; }
+.eyes { display:flex; gap:16px; justify-content:center; margin-bottom:9px; }
+.eye  { width:16px; height:18px; background:#1e1040; border-radius:50%; position:relative; overflow:hidden; }
+.eye::before { content:''; position:absolute; width:6px; height:7px; background:#fff; border-radius:50%; top:2px; right:2px; }
+.eye::after  { content:''; position:absolute; width:3px; height:3px; background:rgba(255,255,255,.55); border-radius:50%; bottom:3px; left:2px; }
+.mouth { width:24px; height:11px; border:3px solid rgba(0,0,0,.18); border-top:0; border-radius:0 0 16px 16px; margin:0 auto; }
+.cheeks { position:absolute; top:56%; left:16%; display:flex; flex-direction:column; gap:3px; }
+.cheek-dot { width:4px; height:4px; background:rgba(255,255,255,.9); border-radius:50%; animation:blink var(--bd,2.4s) var(--bde,0s) ease-in-out infinite; }
+.cheek-dot:nth-child(2) { width:3px; height:3px; margin-left:5px; }
+@keyframes blink { 0%,100%{opacity:.4;transform:scale(.8)} 50%{opacity:1;transform:scale(1.3)} }
+
+/* ── Hero badge (Netflix KIDS badge equivalent) ──────────── */
+.hero-badge {
+  position: absolute; bottom: 7px; right: 7px;
+  font-family: var(--ff-head);
+  font-size: .48rem; font-weight: 700; text-transform: uppercase; letter-spacing: .13em;
+  color: #fff; padding: 2px 6px; border-radius: 4px;
+  background: rgba(0,0,0,.30); border: 1px solid rgba(255,255,255,.28);
+  backdrop-filter: blur(4px); z-index: 5;
+}
+
+/* ── Edit overlay (manage mode) ──────────────────────────── */
+.edit-overlay {
+  position: absolute; inset: 0; border-radius: 17px;
+  background: rgba(30,16,64,.6); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 8;
+}
+.profile.manage-mode .edit-overlay { opacity: 1; pointer-events: all; }
+.edit-center-btn {
+  width: 46px; height: 46px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,.65);
+  background: rgba(255,255,255,.18);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #fff;
+  transition: background .2s, border-color .2s, transform .2s;
+}
+.edit-center-btn:hover { background: rgba(255,255,255,.38); border-color: rgba(255,255,255,.95); transform: scale(1.12); }
+.btn-remove-hero {
+  background: none; border: none; color: var(--destructive);
+  font-family: var(--ff-body); font-size: .85rem; font-weight: 600;
+  cursor: pointer; opacity: .7; transition: opacity .2s;
+  padding: .4rem .8rem; border-radius: 8px; display: inline-block;
+}
+.btn-remove-hero:hover { opacity: 1; }
+
+/* ── Name tag ────────────────────────────────────────────── */
+.profile-name {
+  margin-top: 13px;
+  font-family: var(--ff-head); font-size: 1.05rem; font-weight: 600;
+  color: var(--muted-fg); letter-spacing: .02em;
+  transition: color .2s ease;
+  max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.profile:hover:not(.manage-mode) .profile-name { color: var(--fg); }
+
+/* ── Add Hero card ───────────────────────────────────────── */
+.add-profile {
+  cursor: pointer; text-align: center; opacity: .45;
+  transition: opacity .25s ease;
+}
+.add-profile:hover { opacity: .9; }
+.add-box {
+  width: 150px; height: 150px; border-radius: 20px;
+  border: 2.5px dashed #ddd6fe;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(124,58,237,.04);
+  transition: border-color .25s ease, transform .35s cubic-bezier(.34,1.4,.64,1),
+              background .25s ease, box-shadow .25s ease;
+}
+.add-profile:hover .add-box {
+  border-color: var(--primary); background: rgba(124,58,237,.07);
+  transform: translateY(-8px) scale(1.04);
+  box-shadow: 0 16px 40px rgba(124,58,237,.14);
+}
+.add-plus {
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 2px solid #ddd6fe;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.55rem; color: #a78bfa;
+  transition: all .25s ease;
+}
+.add-profile:hover .add-plus { border-color: var(--primary); color: var(--primary); }
+.add-name {
+  margin-top: 13px;
+  font-family: var(--ff-head); font-size: 1.05rem; font-weight: 600; color: var(--muted-fg);
+}
+
+/* ── Manage Heroes button (Netflix "Manage Profiles") ────── */
+.manage-btn {
+  margin-top: 52px;
+  padding: 10px 34px;
+  border: 1.5px solid #d1d5db;
+  background: transparent; color: var(--muted-fg);
+  font-family: var(--ff-head); font-size: .93rem; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; cursor: pointer;
+  border-radius: 7px;
+  transition: color .2s, border-color .2s, background .2s, box-shadow .2s;
+}
+.manage-btn:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-light); }
+.manage-btn.active {
+  color: var(--primary); border-color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(124,58,237,.12);
+}
+
+/* ── Loading screen ──────────────────────────────────────── */
+.loading-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+  opacity: 0; pointer-events: none; transition: opacity .3s ease;
+}
+.loading-overlay.show { opacity: 1; pointer-events: all; }
+.loading-spinner {
+  width: 52px; height: 52px;
+  border: 4px solid var(--border);
+  border-top: 4px solid var(--primary);
+  border-radius: 50%;
+  animation: spin .85s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-label {
+  font-family: var(--ff-head); font-size: 1.2rem; font-weight: 600; color: var(--muted-fg);
+}
+
+/* ── Skeleton loaders ────────────────────────────────────── */
+.skel {
+  width: 150px; height: 195px; border-radius: 20px;
+  background: rgba(0,0,0,.055);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer { 0%,100%{opacity:.5} 50%{opacity:.85} }
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty-state { text-align: center; padding: 2.5rem; }
+.empty-icon  { font-size: 4rem; margin-bottom: 1rem; line-height: 1; }
+.empty-title { font-family: var(--ff-head); font-size: 1.5rem; color: var(--fg); margin-bottom: .5rem; }
+.empty-desc  { color: var(--muted-fg); font-size: .95rem; margin-bottom: 2rem; line-height: 1.55; }
+.btn-cta {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: var(--primary); color: #fff; border: none; border-radius: 9999px;
+  padding: .75rem 2.2rem; font-family: var(--ff-head); font-size: 1.1rem; font-weight: 600;
+  cursor: pointer; box-shadow: 0 8px 25px rgba(124,58,237,.28);
+  transition: background .2s, transform .2s, box-shadow .2s;
+}
+.btn-cta:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(124,58,237,.38); }
+
+/* ── Add Hero modal (matches auth-card style) ────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(30,27,75,.35); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+  opacity: 0; pointer-events: none; transition: opacity .3s ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: rgba(255,255,255,.92); backdrop-filter: blur(20px);
+  border: 1px solid var(--border); border-radius: 2rem; padding: 2.2rem;
+  width: 100%; max-width: 420px;
+  box-shadow: 0 24px 70px rgba(30,27,75,.14);
+  transform: translateY(18px) scale(.97); transition: transform .3s cubic-bezier(.34,1.4,.64,1);
+}
+.modal-overlay.open .modal { transform: none; }
+.modal-title { font-family: var(--ff-head); font-size: 1.6rem; font-weight: 700; color: var(--fg); margin-bottom: 1.5rem; text-align: center; }
+.form-group  { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1rem; }
+.form-label  { font-size: .82rem; font-weight: 600; color: var(--muted-fg); letter-spacing: .05em; text-transform: uppercase; }
+.form-input, .form-select {
+  background: #fff; border: 1.5px solid var(--border);
+  border-radius: 12px; padding: .7rem 1rem; color: var(--fg);
+  font-family: var(--ff-body); font-size: 1rem;
+  transition: border-color .2s, box-shadow .2s; width: 100%;
+}
+.form-input:focus, .form-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124,58,237,.12); }
+.form-input::placeholder { color: #9ca3af; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.modal-actions { display: flex; gap: .75rem; margin-top: 1.5rem; }
+.btn-cancel {
+  flex: 1; background: #f3f4f6; border: 1.5px solid #e5e7eb;
+  border-radius: 12px; padding: .75rem; color: var(--muted-fg);
+  font-family: var(--ff-head); font-size: 1rem; font-weight: 600; cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.btn-cancel:hover { background: #e5e7eb; color: var(--fg); }
+.btn-save {
+  flex: 2; background: var(--primary); border: none; border-radius: 12px; padding: .75rem;
+  color: #fff; font-family: var(--ff-head); font-size: 1rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(124,58,237,.28);
+  transition: background .2s, transform .2s, box-shadow .2s;
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+}
+.btn-save:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 10px 28px rgba(124,58,237,.4); }
+.btn-save:disabled { opacity: .6; cursor: not-allowed; }
+.form-error { color: var(--destructive); font-size: .83rem; margin-top: -.2rem; display: none; }
+.form-error.show { display: block; }
+
+/* ── Confirm-delete sheet ────────────────────────────────── */
+.confirm-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(30,27,75,.38); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+  opacity: 0; pointer-events: none; transition: opacity .25s ease;
+}
+.confirm-overlay.open { opacity: 1; pointer-events: all; }
+.confirm-box {
+  background: rgba(255,255,255,.94); backdrop-filter: blur(20px);
+  border: 1px solid #fecaca; border-radius: 1.75rem; padding: 2.2rem 2rem;
+  width: 100%; max-width: 360px; text-align: center;
+  box-shadow: 0 20px 60px rgba(30,27,75,.14);
+  transform: scale(.94); transition: transform .28s cubic-bezier(.34,1.4,.64,1);
+}
+.confirm-overlay.open .confirm-box { transform: none; }
+.confirm-icon  { font-size: 2.5rem; margin-bottom: .65rem; line-height: 1; }
+.confirm-title { font-family: var(--ff-head); font-size: 1.4rem; font-weight: 700; color: var(--fg); margin-bottom: .45rem; }
+.confirm-desc  { color: var(--muted-fg); font-size: .9rem; line-height: 1.5; margin-bottom: 1.6rem; }
+.confirm-actions { display: flex; gap: .75rem; }
+.btn-keep   { flex:1; background:#f3f4f6; border:1.5px solid #e5e7eb; border-radius:10px; padding:.7rem; color:var(--muted-fg); font-family:var(--ff-head); font-size:.95rem; cursor:pointer; transition:background .2s,color .2s; }
+.btn-keep:hover { background:#e5e7eb; color:var(--fg); }
+.btn-delete { flex:1; background:var(--destructive); border:none; border-radius:10px; padding:.7rem; color:#fff; font-family:var(--ff-head); font-size:.95rem; font-weight:700; cursor:pointer; box-shadow:0 6px 18px rgba(239,68,68,.28); transition:background .2s,transform .2s,box-shadow .2s; }
+.btn-delete:hover { background:#dc2626; transform:translateY(-1px); box-shadow:0 10px 26px rgba(239,68,68,.4); }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  h1 { font-size: 2rem; margin-bottom: 2rem; }
+  .char-wrap, .fuzzy, .add-box { width: 118px; height: 118px; }
+  .profiles { gap: 20px; }
+  .logo-word { display: none; }
+}
+@media (max-width: 480px) {
+  h1 { font-size: 1.6rem; margin-bottom: 1.5rem; }
+  .char-wrap, .fuzzy, .add-box { width: 96px; height: 96px; }
+  .profiles { gap: 14px; }
+  .face { width: 56px; }
+  .eyes { gap: 12px; }
+  .eye { width: 12px; height: 14px; }
+  .manage-btn { font-size: .78rem; padding: 9px 20px; }
+}
+
+/* ── Character builder: compact 2-col grid (no preview) ─ */
+.character-builder { display: block; }
+.char-options-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem 1.5rem;
+  align-items: start;
+}
+@media (max-width: 480px) {
+  .char-options-col { grid-template-columns: 1fr; }
+}
+
+/* ── Moonface button ─────────────────────────────────── */
+.moonface-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: .55rem;
+  padding: .78rem 1.2rem; border-radius: 12px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #1e1040 0%, #7c3aed 100%);
+  color: #fff; font-family: var(--ff-head); font-size: 1.05rem; font-weight: 700;
+  box-shadow: 0 6px 24px rgba(124,58,237,.35);
+  transition: opacity .2s, transform .2s, box-shadow .2s;
+  margin-bottom: .75rem;
+}
+.moonface-btn:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 10px 32px rgba(124,58,237,.45); }
+.moonface-hint { font-size: .78rem; font-weight: 400; opacity: .72; }
+
+/* ── Moonface camera overlay ─────────────────────────── */
+.moonface-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(5,3,20,.82); backdrop-filter: blur(16px);
+  display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+  opacity: 0; pointer-events: none; transition: opacity .3s ease;
+}
+.moonface-overlay.open { opacity: 1; pointer-events: all; }
+.moonface-modal {
+  display: flex; flex-direction: column; align-items: center; gap: .85rem;
+  width: 100%; max-width: 380px;
+  transform: scale(.95) translateY(10px);
+  transition: transform .35s cubic-bezier(.34,1.4,.64,1);
+}
+.moonface-overlay.open .moonface-modal { transform: none; }
+.moonface-title {
+  font-family: var(--ff-head); font-size: 1.45rem; font-weight: 700;
+  color: #fff; text-shadow: 0 2px 12px rgba(124,58,237,.6);
+  letter-spacing: .03em;
+}
+.moonface-sub {
+  font-size: .82rem; color: rgba(255,255,255,.65); text-align: center; line-height: 1.5;
+}
+
+/* Circular video feed */
+.moonface-vwrap {
+  position: relative; width: 260px; height: 260px; flex-shrink: 0;
+  border-radius: 50%; overflow: hidden;
+  border: 3px solid rgba(167,139,250,.5);
+  box-shadow: 0 0 0 6px rgba(124,58,237,.15), 0 12px 40px rgba(0,0,0,.5);
+}
+.moonface-vwrap video {
+  width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1);
+}
+
+.moonface-status {
+  font-size: .875rem; color: #c4b5fd; min-height: 1.3em;
+  text-align: center; font-weight: 600;
+}
+.moonface-actions { display: flex; gap: .75rem; width: 100%; }
+
+</style>
+</head>
+<body>
+
+<!-- SVG fur-edge filter -->
+<svg width="0" height="0" style="position:absolute" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="fur" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85 0.70" numOctaves="4" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feComposite in="displaced" in2="SourceGraphic" operator="atop"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- Decorative colour blobs -->
+<div class="blob blob-1" aria-hidden="true"></div>
+<div class="blob blob-2" aria-hidden="true"></div>
+<div class="blob blob-3" aria-hidden="true"></div>
+
+<!-- CartoonCare logo — top-left (mirrors Netflix logo position) -->
+<a class="logo" href="/" aria-label="CartoonCare home">
+  <div class="logo-gem">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+    </svg>
+  </div>
+  <span class="logo-word">CartoonCare</span>
+</a>
+
+<!-- Loading screen -->
+<div class="loading-overlay" id="loading-overlay" aria-hidden="true" aria-live="polite">
+  <div class="loading-spinner"></div>
+  <p class="loading-label" id="loading-label"></p>
+</div>
+
+<!-- Add Hero modal -->
+<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal">
+    <h2 class="modal-title" id="modal-title">Create a Hero</h2>
+    <div class="form-group">
+      <label class="form-label" for="hero-name">Hero's Name</label>
+      <input class="form-input" id="hero-name" type="text" placeholder="e.g. Mia" maxlength="40" autocomplete="off">
+      <span class="form-error" id="name-error">Please enter a name</span>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="hero-age">Age</label>
+        <input class="form-input" id="hero-age" type="number" placeholder="7" min="1" max="17">
+        <span class="form-error" id="age-error">Age 1–17</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="hero-gender">Gender</label>
+        <select class="form-select" id="hero-gender">
+          <option value="">Prefer not to say</option>
+          <option value="male">Boy</option>
+          <option value="female">Girl</option>
+          <option value="neutral">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="hero-conditions">Medical Condition <span style="opacity:.55;font-weight:400;text-transform:none">(optional)</span></label>
+      <input class="form-input" id="hero-conditions" type="text" placeholder="e.g. asthma, diabetes…" maxlength="120">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modal-cancel">Cancel</button>
+      <button class="btn-save" id="modal-save">
+        <span id="save-text">Add Hero</span>
+        <span id="save-spinner" style="display:none">…</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Hero Edit Modal ─────────────────────────────────── -->
+<div class="modal-overlay" id="edit-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+  <div class="modal" style="max-width:540px;max-height:90vh;overflow-y:auto">
+    <h2 class="modal-title" id="edit-modal-title">Edit Hero</h2>
+
+    <!-- Name / Age / Gender -->
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label class="form-label" for="edit-name">Hero's Name</label>
+        <input class="form-input" id="edit-name" type="text" maxlength="40" autocomplete="off">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label class="form-label" for="edit-age">Age</label>
+        <input class="form-input" id="edit-age" type="number" min="2" max="18">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="edit-gender">Gender</label>
+      <select class="form-select" id="edit-gender">
+        <option value="">Prefer not to say</option>
+        <option value="male">Boy</option>
+        <option value="female">Girl</option>
+        <option value="neutral">Other / Neutral</option>
+      </select>
+    </div>
+
+    <!-- Medical Challenge -->
+    <div class="form-group">
+      <label class="form-label" for="edit-medical">
+        Medical Challenge
+        <span style="font-weight:400;opacity:.55;text-transform:none;font-size:.8rem">(optional)</span>
+      </label>
+      <input class="form-input" id="edit-medical" type="text"
+        placeholder="e.g. Asthma, Diabetes, Broken Leg" maxlength="300">
+      <span style="font-size:.78rem;color:var(--muted-fg)">Used in every story — treatments become superpowers.</span>
+    </div>
+
+    <!-- Moonface + character builder -->
+    <div class="form-group">
+      <button type="button" class="moonface-btn" id="moonface-trigger">
+        🌙 Moonface <span class="moonface-hint">— scan face to auto-fill</span>
+      </button>
+      <div class="character-panel" id="edit-char-panel">
+        <div class="character-builder">
+          <!-- Options -->
+          <div class="char-options-col">
+            <div class="char-option-group">
+              <label class="char-option-label">Skin Tone</label>
+              <div class="char-swatches" id="edit-skin-swatches">
+                <button type="button" class="char-swatch" data-value="light"        style="background:#FDDCB5" title="Light"></button>
+                <button type="button" class="char-swatch" data-value="medium-light" style="background:#E8B88A" title="Medium Light"></button>
+                <button type="button" class="char-swatch" data-value="medium"       style="background:#D4956B" title="Medium"></button>
+                <button type="button" class="char-swatch" data-value="medium-brown" style="background:#B07242" title="Medium Brown"></button>
+                <button type="button" class="char-swatch" data-value="brown"        style="background:#8B5E3C" title="Brown"></button>
+                <button type="button" class="char-swatch" data-value="dark-brown"   style="background:#5C3A1E" title="Dark Brown"></button>
+              </div>
+            </div>
+            <div class="char-option-group">
+              <label class="char-option-label">Hair Type</label>
+              <div class="char-icon-options" id="edit-hair-style-options">
+                <button type="button" class="char-icon-btn" data-value="short straight">✂️ Short Straight</button>
+                <button type="button" class="char-icon-btn" data-value="short curly">🌀 Short Curly</button>
+                <button type="button" class="char-icon-btn" data-value="long straight">💇 Long Straight</button>
+                <button type="button" class="char-icon-btn" data-value="long curly">🌊 Long Curly</button>
+                <button type="button" class="char-icon-btn" data-value="wavy">〰️ Wavy</button>
+                <button type="button" class="char-icon-btn" data-value="braids">🎀 Braids</button>
+                <button type="button" class="char-icon-btn" data-value="pigtails">🎭 Pigtails</button>
+                <button type="button" class="char-icon-btn" data-value="ponytail">🎗️ Ponytail</button>
+                <button type="button" class="char-icon-btn" data-value="high bun">🍩 High Bun</button>
+                <button type="button" class="char-icon-btn" data-value="afro">✨ Afro</button>
+                <button type="button" class="char-icon-btn" data-value="mohawk">⚡ Mohawk</button>
+                <button type="button" class="char-icon-btn" data-value="buzz cut">💈 Buzz Cut</button>
+                <button type="button" class="char-icon-btn" id="hair-custom-btn" data-value="__custom__">✏️ Custom</button>
+              </div>
+              <input type="text" class="form-input" id="hair-custom-input"
+                placeholder="Describe hair type…" maxlength="60"
+                style="display:none;margin-top:.5rem;font-size:.88rem;padding:.5rem .75rem">
+            </div>
+            <div class="char-option-group">
+              <label class="char-option-label">Hair Color</label>
+              <div class="char-swatches" id="edit-hair-color-swatches">
+                <button type="button" class="char-swatch" data-value="black"  style="background:#1a1a2e" title="Black"></button>
+                <button type="button" class="char-swatch" data-value="brown"  style="background:#6B3A2A" title="Brown"></button>
+                <button type="button" class="char-swatch" data-value="blonde" style="background:#F2D16B" title="Blonde"></button>
+                <button type="button" class="char-swatch" data-value="red"    style="background:#C0392B" title="Red"></button>
+                <button type="button" class="char-swatch" data-value="auburn" style="background:#8B4513" title="Auburn"></button>
+                <button type="button" class="char-swatch" data-value="white"  style="background:#E8E8E8" title="White"></button>
+              </div>
+            </div>
+            <div class="char-option-group">
+              <label class="char-option-label">Outfit</label>
+              <div class="char-icon-options" id="edit-outfit-options">
+                <button type="button" class="char-icon-btn" data-value="superhero">🦸 Superhero</button>
+                <button type="button" class="char-icon-btn" data-value="astronaut">🚀 Astronaut</button>
+                <button type="button" class="char-icon-btn" data-value="wizard">🧙 Wizard</button>
+                <button type="button" class="char-icon-btn" data-value="explorer">🏕️ Explorer</button>
+                <button type="button" class="char-icon-btn" id="outfit-custom-btn" data-value="__custom__">✏️ Custom</button>
+              </div>
+              <input type="text" class="form-input" id="outfit-custom-input"
+                placeholder="Describe outfit…" maxlength="80"
+                style="display:none;margin-top:.5rem;font-size:.88rem;padding:.5rem .75rem">
+            </div>
+            <div class="char-option-group">
+              <label class="char-option-label">Accessory</label>
+              <div class="char-icon-options" id="edit-accessory-options">
+                <button type="button" class="char-icon-btn" data-value="cape">🧣 Cape</button>
+                <button type="button" class="char-icon-btn" data-value="shield">🛡️ Shield</button>
+                <button type="button" class="char-icon-btn" data-value="wand">🪄 Wand</button>
+                <button type="button" class="char-icon-btn" data-value="backpack">🎒 Backpack</button>
+              </div>
+            </div>
+            <div class="char-option-group">
+              <label class="char-option-label">Medical Detail</label>
+              <div class="char-icon-options" id="edit-medical-options">
+                <button type="button" class="char-icon-btn" data-value="none">✨ None</button>
+                <button type="button" class="char-icon-btn" data-value="arm cast">💪 Arm Cast</button>
+                <button type="button" class="char-icon-btn" data-value="eye patch">🏴‍☠️ Eye Patch</button>
+                <button type="button" class="char-icon-btn" data-value="wheelchair">🦽 Wheelchair</button>
+                <button type="button" class="char-icon-btn" data-value="head bandana">🎗️ Head Bandana</button>
+                <button type="button" class="char-icon-btn" id="medical-custom-btn" data-value="__custom__">✏️ Custom</button>
+              </div>
+              <input type="text" class="form-input" id="medical-custom-input"
+                placeholder="Describe medical detail…" maxlength="80"
+                style="display:none;margin-top:.5rem;font-size:.88rem;padding:.5rem .75rem">
+            </div>
+            <div class="char-option-group" style="grid-column:1/-1">
+              <label class="char-option-label">Birth Marks</label>
+              <input type="text" class="form-input" id="edit-birth-marks"
+                placeholder="e.g. small mark on left cheek, star-shaped patch…" maxlength="120"
+                style="font-size:.88rem;padding:.5rem .75rem">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <span class="form-error" id="edit-error" style="display:none;margin-bottom:.5rem"></span>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="edit-cancel">Cancel</button>
+      <button class="btn-save" id="edit-save">
+        <span id="edit-save-text">Save Changes</span>
+        <span id="edit-save-spinner" style="display:none">…</span>
+      </button>
+    </div>
+    <div style="text-align:center;margin-top:.65rem">
+      <button type="button" class="btn-remove-hero" id="edit-delete-hero">Remove this hero</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm delete -->
+<div class="confirm-overlay" id="confirm-overlay" role="alertdialog" aria-modal="true">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <h3 class="confirm-title" id="confirm-title">Remove hero?</h3>
+    <p class="confirm-desc">All stories for this hero will be permanently deleted. This can't be undone.</p>
+    <div class="confirm-actions">
+      <button class="btn-keep"   id="confirm-cancel">Keep</button>
+      <button class="btn-delete" id="confirm-delete">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- Page -->
+<main class="page" id="page" role="main">
+  <h1 id="heading">Who's reading tonight?</h1>
+
+  <div class="profiles" id="profiles-row" role="list" aria-label="Story heroes">
+    <div class="skel"></div>
+    <div class="skel"></div>
+    <div class="skel"></div>
+  </div>
+
+  <button class="manage-btn" id="manage-btn" style="display:none">Manage Heroes</button>
+</main>
+
+<!-- Moonface camera overlay -->
+<div class="moonface-overlay" id="moonface-overlay" role="dialog" aria-modal="true" aria-label="Moonface face scan">
+  <div class="moonface-modal">
+    <p class="moonface-title">Moonface</p>
+    <p class="moonface-sub">Hold your hero's face inside the moon and tap Capture.</p>
+
+    <div class="moonface-vwrap">
+      <video id="moonface-video" autoplay playsinline muted></video>
+      <canvas id="moonface-canvas" style="display:none"></canvas>
+    </div>
+
+    <p class="moonface-status" id="moonface-status" aria-live="polite"></p>
+    <div class="moonface-actions">
+      <button type="button" class="btn-cancel" id="moonface-cancel">Cancel</button>
+      <button type="button" class="btn-save"   id="moonface-capture">📸 Capture</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/profiles.js"></script>
+</body>
+</html>

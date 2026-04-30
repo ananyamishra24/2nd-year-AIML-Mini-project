@@ -14,13 +14,13 @@
   <div class="create-blob-l"></div>
 
   <div class="create-inner">
-    <button class="create-back" onclick="history.back()">
+    <a class="create-back" href="/">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M15 18l-6-6 6-6"/>
       </svg>
       Back to Library
-    </button>
+    </a>
 
     <div class="create-card">
       <div class="create-header">
@@ -30,76 +30,54 @@
             <path d="M12 5v14M5 12h14"/>
           </svg>
         </div>
-        <h1>Design Your Hero</h1>
-        <p>Tell us about the brave child, and we'll write a legend.</p>
+        <h1>Create a Magic Story</h1>
+        <p>Pick a hero and we'll write their legend.</p>
       </div>
 
       <form id="create-form" class="form-space" autocomplete="off">
 
-        <!-- Row 1: Name + Age + Gender (3 columns) -->
-        <div class="form-grid-3">
-          <div class="form-group" style="grid-column:1/2">
-            <label class="form-label" for="childName">
-              <svg class="ico-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-              </svg>
-              Hero's Name
-            </label>
-            <input id="childName" name="childName" type="text" class="form-input"
-              placeholder="e.g. Leo" maxlength="40" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="age">Age</label>
-            <input id="age" name="age" type="number" class="form-input"
-              placeholder="6" min="2" max="14" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="gender">Gender</label>
-            <select id="gender" name="gender" class="form-select" required>
-              <option value="">Select</option>
-              <option value="boy">Boy</option>
-              <option value="girl">Girl</option>
-              <option value="neutral">Neutral</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Medical Challenge full width -->
-        <div class="form-group">
-          <label class="form-label" for="condition">
-            <svg class="ico-red" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            Medical Challenge
-          </label>
-          <input id="condition" name="condition" type="text" class="form-input"
-            placeholder="e.g. Asthma, Diabetes, Broken Leg" maxlength="100" required />
-          <span class="form-hint">We'll explain this gently and turn treatments into superpowers.</span>
-        </div>
-
-        <!-- Hero Characteristics -->
+        <!-- ── Hero Picker ── -->
         <div class="form-group">
           <div class="form-section-label">
-            <svg class="ico-accent" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+              class="ico-primary">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
             </svg>
-            Hero Characteristics
+            Choose Your Hero
           </div>
-          <p class="traits-desc">What makes your hero special? Select the traits that best describe them.</p>
+          <p class="traits-desc">Select who this story is for. Hero details come from their profile.</p>
 
-          <div class="traits-grid" id="traits-grid">
-            <!-- rendered by JS -->
+          <!-- Loaded by JS -->
+          <div class="hero-picker-grid" id="hero-picker-grid">
+            <div class="hero-picker-skeleton"></div>
+            <div class="hero-picker-skeleton"></div>
+            <div class="hero-picker-skeleton"></div>
           </div>
 
-          <p class="traits-selected">Selected: <span id="traits-label">none</span></p>
-          <input type="hidden" id="heroCharacteristics" name="heroCharacteristics" />
+          <!-- Summary of selected hero's profile data -->
+          <div class="hero-summary hidden" id="hero-summary">
+            <div class="hero-summary-row">
+              <span class="hero-summary-chip" id="hs-age"></span>
+              <span class="hero-summary-chip" id="hs-gender"></span>
+              <span class="hero-summary-chip hs-medical hidden" id="hs-medical"></span>
+              <span class="hero-summary-chip hs-traits hidden" id="hs-traits"></span>
+            </div>
+            <a href="/profiles" class="hero-summary-edit">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Edit hero profile
+            </a>
+          </div>
+
+          <p class="form-error hidden" id="hero-error">Please select a hero first.</p>
         </div>
 
-        <!-- Story Settings (collapsible) -->
+        <!-- ── Story Settings (collapsible) ── -->
         <div class="form-group">
           <button type="button" class="settings-toggle" id="settings-toggle">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -170,25 +148,15 @@
                 </select>
               </div>
               <div class="form-group">
-                <label class="form-label" for="illustrationStyle">Illustration Style</label>
-                <select id="illustrationStyle" name="illustrationStyle" class="form-select">
-                  <option value="">Auto (cartoon)</option>
-                  <option value="cartoon">Cartoon</option>
-                  <option value="watercolor">Watercolor</option>
-                  <option value="comic-book">Comic Book</option>
-                  <option value="pixel-art">Pixel Art</option>
+                <label class="form-label" for="readingLevel">Reading Level</label>
+                <select id="readingLevel" name="readingLevel" class="form-select">
+                  <option value="">Auto (by age)</option>
+                  <option value="toddler">Toddler (2–4)</option>
+                  <option value="early-reader">Early Reader (5–7)</option>
+                  <option value="older-child">Older Child (8–12)</option>
+                  <option value="teen">Teen (13+)</option>
                 </select>
               </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="readingLevel">Reading Level</label>
-              <select id="readingLevel" name="readingLevel" class="form-select">
-                <option value="">Auto (by age)</option>
-                <option value="toddler">Toddler (2-4)</option>
-                <option value="early-reader">Early Reader (5-7)</option>
-                <option value="older-child">Older Child (8-12)</option>
-                <option value="teen">Teen (13+)</option>
-              </select>
             </div>
           </div>
         </div>
@@ -216,14 +184,6 @@
 <!-- TOAST -->
 <div class="toast-container" id="toast-container"></div>
 
-<script>
-// Auth guard — redirect to login if not authenticated
-(function(){
-  if (!localStorage.getItem('cc_token')) {
-    window.location.href = '/login?redirect=/create';
-  }
-})();
-</script>
 <script src="/js/create.js"></script>
 </body>
 </html>

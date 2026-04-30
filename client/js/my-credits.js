@@ -69,9 +69,9 @@ async function loadOverview() {
 function renderStats(data) {
   const row = document.getElementById('stats-row');
   const flux = data.by_api.flux2pro || {};
-  const gemini = data.by_api.gemini || {};
-  const totalCalls = (flux.total_calls || 0) + (gemini.total_calls || 0);
-  const totalStories = Math.max(gemini.successes || 0, 0);
+  const claude = data.by_api.claude || {};
+  const totalCalls = (flux.total_calls || 0) + (claude.total_calls || 0);
+  const totalStories = Math.max(claude.successes || 0, 0);
   const totalImages = flux.successes || 0;
 
   row.innerHTML = `
@@ -94,7 +94,7 @@ function renderStats(data) {
       </div>
       <div class="stat-label">Stories Created</div>
       <div class="stat-value">${totalStories}</div>
-      <div class="stat-sub">$${(gemini.total_credits || 0).toFixed(2)} in story generation</div>
+      <div class="stat-sub">$${(claude.total_credits || 0).toFixed(2)} in story generation</div>
     </div>
 
     <div class="stat-card blue">
@@ -116,8 +116,8 @@ function renderStats(data) {
         </svg>
       </div>
       <div class="stat-label">Success Rate</div>
-      <div class="stat-value">${totalCalls > 0 ? Math.round(((flux.successes || 0) + (gemini.successes || 0)) / totalCalls * 100) : 0}%</div>
-      <div class="stat-sub">${(flux.failures || 0) + (gemini.failures || 0)} failures</div>
+      <div class="stat-value">${totalCalls > 0 ? Math.round(((flux.successes || 0) + (claude.successes || 0)) / totalCalls * 100) : 0}%</div>
+      <div class="stat-sub">${(flux.failures || 0) + (claude.failures || 0)} failures</div>
     </div>
   `;
 }
@@ -131,8 +131,8 @@ function renderBreakdown(data) {
     return;
   }
 
-  const labels = { flux2pro: 'Image Generation (Flux 2 Pro)', gemini: 'Story Text (Gemini)' };
-  const colors = { flux2pro: 'purple', gemini: 'blue' };
+  const labels = { flux2pro: 'Image Generation (Flux 2 Pro)', claude: 'Story Text (Claude)' };
+  const colors = { flux2pro: 'purple', claude: 'blue' };
 
   let html = '';
   for (const [name, info] of Object.entries(apis)) {
@@ -186,22 +186,22 @@ function renderHistoryChart(history) {
   const dates = Object.keys(byDate).sort();
   const maxCredits = Math.max(...dates.map(d => {
     const v = byDate[d];
-    return (v.flux2pro || 0) + (v.gemini || 0);
+    return (v.flux2pro || 0) + (v.claude || 0);
   }), 0.01);
 
   let barsHtml = '';
   dates.forEach(date => {
     const d = byDate[date];
     const fluxH = ((d.flux2pro || 0) / maxCredits * 170);
-    const geminiH = ((d.gemini || 0) / maxCredits * 170);
+    const claudeH = ((d.claude || 0) / maxCredits * 170);
     const shortDate = date.slice(5);
     barsHtml += `
       <div class="chart-bar-col">
         <div style="display:flex;gap:2px;align-items:flex-end;height:100%">
           <div class="chart-bar flux" style="height:${Math.max(fluxH, 2)}px"
                data-tooltip="Images: $${(d.flux2pro || 0).toFixed(3)}"></div>
-          <div class="chart-bar gemini" style="height:${Math.max(geminiH, 2)}px"
-               data-tooltip="Stories: $${(d.gemini || 0).toFixed(3)}"></div>
+          <div class="chart-bar claude" style="height:${Math.max(claudeH, 2)}px"
+               data-tooltip="Stories: $${(d.claude || 0).toFixed(3)}"></div>
         </div>
         <div class="chart-bar-label">${shortDate}</div>
       </div>`;

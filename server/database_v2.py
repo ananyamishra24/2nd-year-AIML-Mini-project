@@ -117,6 +117,23 @@ def init_db():
             )
         ''')
 
+        # Migrate: add google_id column if it doesn't exist yet
+        try:
+            _execute(conn, 'ALTER TABLE users ADD COLUMN google_id TEXT')
+        except Exception:
+            pass  # column already exists
+
+        # Migrate: add hero customization columns to children
+        for _col, _def in [
+            ('medical_challenge', "TEXT DEFAULT ''"),
+            ('characteristics',   "TEXT DEFAULT ''"),
+            ('hero_character',    'TEXT DEFAULT NULL'),
+        ]:
+            try:
+                _execute(conn, f'ALTER TABLE children ADD COLUMN {_col} {_def}')
+            except Exception:
+                pass  # column already exists
+
         # Children profiles (linked to parent user)
         _execute(conn, '''
             CREATE TABLE IF NOT EXISTS children (
@@ -236,7 +253,20 @@ def init_db():
             _execute(conn,
                 "INSERT INTO credit_config (config_key, config_value) VALUES ('flux2pro_cost_per_image', '0.05')")
             _execute(conn,
-                "INSERT INTO credit_config (config_key, config_value) VALUES ('gemini_cost_per_call', '0.01')")
+                "INSERT INTO credit_config (config_key, config_value) VALUES ('claude_cost_per_call', '0.01')")
+
+        # Migrate legacy gemini_cost_per_call rows to claude_cost_per_call
+        legacy = _fetchone(conn,
+            "SELECT config_value FROM credit_config WHERE config_key = 'gemini_cost_per_call'")
+        if legacy:
+            existing_claude = _fetchone(conn,
+                "SELECT id FROM credit_config WHERE config_key = 'claude_cost_per_call'")
+            if not existing_claude:
+                _execute(conn,
+                    "INSERT INTO credit_config (config_key, config_value) VALUES ('claude_cost_per_call', ?)",
+                    (legacy['config_value'],))
+            _execute(conn,
+                "DELETE FROM credit_config WHERE config_key = 'gemini_cost_per_call'")
 
         # ── Migrations: add missing columns to existing SQLite tables ──
         if not USE_POSTGRES:
@@ -250,6 +280,7 @@ def init_db():
                 ('api_logs', 'story_id',            'INTEGER'),
                 ('api_logs', 'credits_used',        'REAL DEFAULT 0.0'),
                 ('users',   'is_admin',             'INTEGER DEFAULT 0'),
+                ('stories', 'hero_character',        'TEXT'),
             ]
             cur = conn.cursor()
             for table, column, col_def in migrations:
@@ -285,6 +316,14 @@ def row_to_story(row) -> Optional[dict]:
     d['heroCharacteristics'] = d.pop('hero_characteristics', '') or ''
     d['storyTitle'] = d.pop('story_title', '') or ''
     d['createdAt'] = d.pop('created_at', '') or ''
+    # Expose hero_character as parsed JSON (or None)
+    hc = d.pop('hero_character', None)
+    if hc and isinstance(hc, str):
+        try:
+            hc = json.loads(hc)
+        except (json.JSONDecodeError, TypeError):
+            hc = None
+    d['heroCharacter'] = hc
     d.pop('moderation_flags', None)
     d.pop('generation_time_ms', None)
     return d
@@ -295,10 +334,13 @@ def row_to_user(row) -> Optional[dict]:
     d = _row_to_dict(row)
     if d is None:
         return None
-    d.pop('password_hash', None)
+    pw_hash = d.pop('password_hash', '') or ''
     d.pop('salt', None)
+    google_id = d.pop('google_id', None)
     d['createdAt'] = d.pop('created_at', '') or ''
     d['lastLogin'] = d.pop('last_login', '') or ''
+    # True when the account was created via Google and has no local password
+    d['isGoogleUser'] = bool(google_id) and pw_hash == ''
     return d
 
 
@@ -307,8 +349,12 @@ def row_to_child(row) -> Optional[dict]:
     d = _row_to_dict(row)
     if d is None:
         return None
-    d['conditions'] = json.loads(d['conditions']) if isinstance(d['conditions'], str) else d['conditions']
-    d['preferences'] = json.loads(d['preferences']) if isinstance(d['preferences'], str) else d['preferences']
+    d['conditions'] = json.loads(d['conditions']) if isinstance(d['conditions'], str) else (d['conditions'] or [])
+    d['preferences'] = json.loads(d['preferences']) if isinstance(d['preferences'], str) else (d['preferences'] or {})
+    raw_hc = d.pop('hero_character', None)
+    d['heroCharacter'] = json.loads(raw_hc) if raw_hc else None
+    d['medicalChallenge'] = d.pop('medical_challenge', '') or ''
+    d['characteristics'] = d.get('characteristics', '') or ''
     d['createdAt'] = d.pop('created_at', '') or ''
     d.pop('user_id', None)
     return d
@@ -348,14 +394,77 @@ def update_last_login(user_id: int):
         _execute(conn, 'UPDATE users SET last_login = ? WHERE id = ?', (now, user_id))
 
 
+def get_user_by_google_id(google_id: str) -> Optional[dict]:
+    """Look up a user by their Google account ID."""
+    with get_db() as conn:
+        row = _fetchone(conn, 'SELECT * FROM users WHERE google_id = ?', (google_id,))
+        return _row_to_dict(row)
+
+
+def create_google_user(email: str, name: str, google_id: str) -> Optional[dict]:
+    """Create a user account linked to a Google identity (no local password)."""
+    with get_db() as conn:
+        _execute(conn,
+            'INSERT INTO users (email, name, password_hash, salt, google_id) VALUES (?, ?, ?, ?, ?)',
+            (email, name, '', '', google_id)
+        )
+        row = _fetchone(conn, 'SELECT * FROM users WHERE email = ?', (email,))
+        return row_to_user(row)
+
+
+def link_google_id(user_id: int, google_id: str) -> None:
+    """Attach a Google ID to an existing email/password account."""
+    with get_db() as conn:
+        _execute(conn, 'UPDATE users SET google_id = ? WHERE id = ?', (google_id, user_id))
+
+
+def update_user_name(user_id: int, name: str) -> Optional[dict]:
+    """Update a user's display name. Returns the updated user dict."""
+    with get_db() as conn:
+        _execute(conn, 'UPDATE users SET name = ? WHERE id = ?', (name, user_id))
+        row = _fetchone(conn, 'SELECT * FROM users WHERE id = ?', (user_id,))
+        return row_to_user(row)
+
+
+def update_user_password(user_id: int, password_hash: str, salt: str) -> bool:
+    """Replace a user's password hash and salt. Returns True on success."""
+    with get_db() as conn:
+        cur = _execute(conn,
+            'UPDATE users SET password_hash = ?, salt = ? WHERE id = ?',
+            (password_hash, salt, user_id),
+        )
+        return cur.rowcount > 0
+
+
+def delete_user(user_id: int) -> bool:
+    """Delete a user account and all associated data. Returns True on success."""
+    with get_db() as conn:
+        # Cascade: remove children, stories, feedback, preferences, api_logs
+        _execute(conn, 'DELETE FROM story_feedback WHERE story_id IN (SELECT id FROM stories WHERE user_id = ?)', (user_id,))
+        _execute(conn, 'DELETE FROM stories WHERE user_id = ?', (user_id,))
+        _execute(conn, 'DELETE FROM preferences WHERE child_id IN (SELECT id FROM children WHERE user_id = ?)', (user_id,))
+        _execute(conn, 'DELETE FROM children WHERE user_id = ?', (user_id,))
+        _execute(conn, 'DELETE FROM user_feedback WHERE user_id = ?', (user_id,))
+        _execute(conn, 'DELETE FROM api_logs WHERE user_id = ?', (user_id,))
+        cur = _execute(conn, 'DELETE FROM users WHERE id = ?', (user_id,))
+        return cur.rowcount > 0
+
+
 # ── Children profile operations ──────────────────────────────────────
 
 def create_child(user_id: int, name: str, age: int, gender: str,
-                 conditions: Optional[list] = None) -> Optional[dict]:
+                 conditions: Optional[list] = None,
+                 medical_challenge: str = '',
+                 characteristics: str = '',
+                 hero_character: Optional[dict] = None) -> Optional[dict]:
     with get_db() as conn:
         _execute(conn,
-            'INSERT INTO children (user_id, name, age, gender, conditions) VALUES (?, ?, ?, ?, ?)',
-            (user_id, name, age, gender, json.dumps(conditions or []))
+            '''INSERT INTO children
+               (user_id, name, age, gender, conditions, medical_challenge, characteristics, hero_character)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+            (user_id, name, age, gender, json.dumps(conditions or []),
+             medical_challenge, characteristics,
+             json.dumps(hero_character) if hero_character else None)
         )
         rows = _fetchall(conn,
             'SELECT * FROM children WHERE user_id = ? ORDER BY id DESC LIMIT 1',
@@ -381,7 +490,8 @@ def get_child(child_id: int) -> Optional[dict]:
 
 def update_child(child_id: int, user_id: Optional[int] = None, **kwargs) -> Optional[dict]:
     # Whitelist of allowed column names — prevents SQL injection via key names
-    ALLOWED_COLUMNS = {'name', 'age', 'gender', 'conditions', 'preferences'}
+    ALLOWED_COLUMNS = {'name', 'age', 'gender', 'conditions', 'preferences',
+                       'medical_challenge', 'characteristics', 'hero_character'}
     updates = {k: v for k, v in kwargs.items() if k in ALLOWED_COLUMNS}
     if not updates:
         return get_child(child_id)
@@ -390,6 +500,10 @@ def update_child(child_id: int, user_id: Optional[int] = None, **kwargs) -> Opti
         updates['conditions'] = json.dumps(updates['conditions'])
     if 'preferences' in updates:
         updates['preferences'] = json.dumps(updates['preferences'])
+    if 'hero_character' in updates and isinstance(updates['hero_character'], dict):
+        updates['hero_character'] = json.dumps(updates['hero_character'])
+    elif 'hero_character' in updates and updates['hero_character'] is None:
+        updates['hero_character'] = None
 
     with get_db() as conn:
         # Safe: keys are validated against ALLOWED_COLUMNS above
@@ -427,15 +541,18 @@ def verify_child_owner(child_id: int, user_id: int) -> bool:
 def create_story(child_name: str, age: int, gender: str, condition: str,
                  hero_characteristics: str, story_title: str, pages: list,
                  user_id: Optional[int] = None, child_id: Optional[int] = None,
-                 moderation_flags: Optional[list] = None, generation_time_ms: int = 0) -> Optional[dict]:
+                 moderation_flags: Optional[list] = None, generation_time_ms: int = 0,
+                 hero_character=None) -> Optional[dict]:
     with get_db() as conn:
         _execute(conn,
             '''INSERT INTO stories (user_id, child_id, child_name, age, gender, condition,
-               hero_characteristics, story_title, pages, moderation_flags, generation_time_ms)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+               hero_characteristics, story_title, pages, moderation_flags, generation_time_ms,
+               hero_character)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             (user_id, child_id, child_name, age, gender, condition,
              hero_characteristics, story_title, json.dumps(pages),
-             json.dumps(moderation_flags or []), generation_time_ms)
+             json.dumps(moderation_flags or []), generation_time_ms,
+             json.dumps(hero_character) if hero_character else None)
         )
         # Get the newly created story
         rows = _fetchall(conn, 'SELECT * FROM stories ORDER BY id DESC LIMIT 1')
@@ -647,7 +764,7 @@ def get_credit_cost(api_name: str) -> float:
     config = get_credit_config()
     cost_map = {
         'flux2pro': float(config.get('flux2pro_cost_per_image', '0.05')),
-        'gemini': float(config.get('gemini_cost_per_call', '0.01')),
+        'claude': float(config.get('claude_cost_per_call', '0.01')),
     }
     return cost_map.get(api_name, 0.0)
 

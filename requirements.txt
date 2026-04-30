@@ -1,13 +1,14 @@
 Flask==3.0.0
 flask-cors==4.0.0
 Flask-Limiter==3.8.0
-google-generativeai==0.8.3
+anthropic>=0.39.0
 python-dotenv==1.0.1
 requests==2.32.3
 Werkzeug==3.0.4
 
 # Auth
 PyJWT==2.9.0
+google-auth>=2.0.0
 
 # Async backend (FastAPI)
 fastapi==0.115.0

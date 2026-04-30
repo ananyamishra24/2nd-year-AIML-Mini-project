@@ -28,8 +28,75 @@ const Auth = {
 
 // ── Redirect if already logged in ─────────────────────
 if (Auth.isLoggedIn()) {
-  window.location.href = '/';
+  window.location.href = '/profiles';
 }
+
+// ── Google Sign-In ─────────────────────────────────────
+// Called by the GIS library once it has loaded
+window.onGoogleLibraryLoad = function () {
+  if (window.__pendingGoogleClientId) {
+    initGoogleSignInWithId(window.__pendingGoogleClientId);
+  }
+};
+
+async function initGoogleSignIn() {
+  try {
+    const res = await fetch('/api/auth/google/config');
+    const data = await res.json();
+    if (!data.client_id) return; // Google not configured — button stays hidden
+    if (typeof google !== 'undefined' && google.accounts) {
+      initGoogleSignInWithId(data.client_id);
+    } else {
+      // GIS script not ready yet — store and wait for onGoogleLibraryLoad
+      window.__pendingGoogleClientId = data.client_id;
+    }
+  } catch { /* network error — skip Google button */ }
+}
+
+function initGoogleSignInWithId(clientId) {
+  google.accounts.id.initialize({
+    client_id: clientId,
+    callback: handleGoogleCredential,
+    use_fedcm_for_prompt: false,
+  });
+
+  const container = document.getElementById('google-btn-container');
+  const section   = document.getElementById('google-signin-section');
+  if (!container || !section) return;
+
+  const width = Math.min(container.parentElement.offsetWidth || 360, 400);
+  google.accounts.id.renderButton(container, {
+    theme: 'outline',
+    size: 'large',
+    width: width,
+    logo_alignment: 'center',
+  });
+  section.style.display = '';
+}
+
+async function handleGoogleCredential(response) {
+  try {
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: response.credential }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.message || 'Google sign-in failed');
+      return;
+    }
+    Auth.setToken(data.token);
+    Auth.setUser(data.user);
+    showToast('Welcome!', 'success');
+    const redirect = new URLSearchParams(window.location.search).get('redirect') || '/profiles';
+    setTimeout(() => { window.location.href = redirect; }, 500);
+  } catch {
+    showToast('Google sign-in failed. Please try again.');
+  }
+}
+
+initGoogleSignIn();
 
 // ── Tab switching ─────────────────────────────────────
 const tabs = document.querySelectorAll('[data-tab]');
@@ -100,8 +167,8 @@ loginForm.addEventListener('submit', async (e) => {
     Auth.setUser(data.user);
     showToast('Welcome back!', 'success');
 
-    // Redirect to original page or home
-    const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+    // Redirect to profile selector or original page
+    const redirect = new URLSearchParams(window.location.search).get('redirect') || '/profiles';
     setTimeout(() => { window.location.href = redirect; }, 500);
 
   } catch (err) {
@@ -146,7 +213,7 @@ signupForm.addEventListener('submit', async (e) => {
     Auth.setUser(data.user);
     showToast('Account created! Welcome!', 'success');
 
-    const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+    const redirect = new URLSearchParams(window.location.search).get('redirect') || '/profiles';
     setTimeout(() => { window.location.href = redirect; }, 500);
 
   } catch (err) {

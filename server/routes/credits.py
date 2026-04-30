@@ -51,7 +51,7 @@ def admin_credit_overview():
         'by_api': usage.get('by_api', {}),
         'cost_config': {
             'flux2pro_cost_per_image': float(config.get('flux2pro_cost_per_image', '0.05')),
-            'gemini_cost_per_call': float(config.get('gemini_cost_per_call', '0.01')),
+            'claude_cost_per_call': float(config.get('claude_cost_per_call', '0.01')),
         }
     })
 
@@ -94,7 +94,7 @@ def admin_get_config():
 def admin_update_config():
     """Update credit configuration."""
     data = request.get_json()
-    allowed_keys = {'total_budget', 'flux2pro_cost_per_image', 'gemini_cost_per_call'}
+    allowed_keys = {'total_budget', 'flux2pro_cost_per_image', 'claude_cost_per_call'}
     updated = []
     for key, value in data.items():
         if key in allowed_keys:

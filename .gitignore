@@ -32,3 +32,7 @@ server_err.log
 *.pdf
 generate_report.py
 _debug_*.py
+node_modules/
+src/node_modules/
+.env
+models/

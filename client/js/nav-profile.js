@@ -63,6 +63,27 @@
         <div class="dd-divider"></div>
 
         <!-- Menu items -->
+        <a href="/account" class="dd-item" role="menuitem">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Account Settings
+        </a>
+
+        <a href="/profiles" class="dd-item" role="menuitem">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            <circle cx="19" cy="5" r="2"/>
+            <line x1="19" y1="3" x2="19" y2="7"/>
+            <line x1="17" y1="5" x2="21" y2="5"/>
+          </svg>
+          Profile Settings
+        </a>
+
         <a href="/my-credits" class="dd-item" role="menuitem">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -82,6 +103,16 @@
         <div class="dd-admin-slot" id="dd-admin-slot"></div>
 
         <div class="dd-divider"></div>
+
+        <a href="/profiles" class="dd-item" role="menuitem">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            <path d="M19 8l2 2 4-4" transform="scale(.55) translate(14,2)"/>
+          </svg>
+          Switch Hero
+        </a>
 
         <button class="dd-item" id="dd-switch-account" role="menuitem">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"

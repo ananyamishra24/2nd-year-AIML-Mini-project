@@ -19,7 +19,7 @@ CartoonCare turns scary medical experiences into magical adventures. Parents ent
 - ☁️ **Cloud Storage** — Optional S3 storage with presigned URLs for generated images
 - 🎛️ **Custom Story Settings** — Choose story length (1/3/5 pages), tone (funny/adventurous/calming), theme (superhero/space/underwater/jungle), villain type, ending style, illustration style, and reading level
 - 💬 **Help & Support** — Dedicated feedback page accessible from the user dropdown; rate stories with stars, emoji reactions, and comments
-- 📊 **Performance Monitoring** — Admin dashboard showing uptime, memory usage, error rates, and AI generation time breakdowns (Gemini vs Flux)
+- 📊 **Performance Monitoring** — Admin dashboard showing uptime, memory usage, error rates, and AI generation time breakdowns (Claude vs Flux)
 - 🔐 **User Data Isolation** — Each user can only see and manage their own stories and children profiles
 
 ---
@@ -33,7 +33,7 @@ CartoonCare turns scary medical experiences into magical adventures. Parents ent
 | Database | SQLite (with PostgreSQL support) |
 | Rate Limiting | Flask-Limiter (200/day global, 10/min auth, 5/min stories) |
 | Authentication | JWT (HS256), PBKDF2 password hashing |
-| AI (Text) | Google Gemini 2.5 Flash |
+| AI (Text) | Anthropic Claude Sonnet 4.6 (via Azure AI Foundry) |
 | AI (Images) | Flux 2 Pro (Black Forest Labs via Azure AI) |
 | Storage | Local filesystem or AWS S3 (presigned URLs) |
 | Translation | MyMemory Free API |
@@ -117,7 +117,9 @@ pip install -r requirements.txt
 Copy `.env.example` to `.env` and fill in your keys:
 ```
 # Required
-GEMINI_API_KEY=your_gemini_api_key_here
+CLAUDE_API_KEY=your_azure_ai_foundry_api_key_here
+CLAUDE_ENDPOINT=https://<your-resource>.services.ai.azure.com/anthropic
+CLAUDE_MODEL=claude-sonnet-4-6
 FLUX2PRO_API_KEY=your_flux2pro_api_key_here
 FLUX2PRO_ENDPOINT=your_flux2pro_endpoint_here
 JWT_SECRET_KEY=your_jwt_secret_here
@@ -231,7 +233,7 @@ All story and children endpoints enforce ownership checks. Every request extract
 
 1. Parent **signs up or logs in** to their CartoonCare account
 2. Parent fills in child's **name, age, gender, medical condition, and personality traits**
-3. **Gemini 2.5 Flash** generates a 3-page personalized story with the child as the hero
+3. **Claude Sonnet 4.6** generates a 3-page personalized story with the child as the hero
 4. **Flux 2 Pro** generates a vivid illustration for each page (with automatic retry on timeout)
 5. Story is saved to the database and images stored locally or on S3
 6. Parent can **narrate, translate, favorite, or delete** the story anytime
@@ -268,7 +270,7 @@ Admin users can access the dashboard at `/admin-credits`.
 **Performance Monitoring:**
 - Server uptime and memory usage
 - Total requests and error rate
-- AI generation time averages (Gemini vs Flux separately)
+- AI generation time averages (Claude vs Flux separately)
 - Recent generation history
 
 To create an admin account, set `is_admin = 1` for the user in the database.

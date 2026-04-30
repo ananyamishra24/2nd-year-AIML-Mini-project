@@ -6,6 +6,7 @@
   <title>Login · Cartoon Care</title>
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -28,6 +29,15 @@
 
     <!-- Auth Card -->
     <div class="auth-card">
+
+      <!-- Google Sign-In -->
+      <div class="google-signin-section" id="google-signin-section" style="display:none">
+        <div id="google-btn-container" style="display:flex;justify-content:center"></div>
+        <div class="auth-divider">
+          <span>or continue with email</span>
+        </div>
+      </div>
+
       <!-- Tab Toggle -->
       <div class="auth-tabs">
         <button class="auth-tab active" id="tab-login" data-tab="login">Login</button>
@@ -203,6 +213,33 @@
 
 <!-- TOAST -->
 <div class="toast-container" id="toast-container"></div>
+
+<style>
+.google-signin-section { margin-bottom: 1.25rem; }
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  margin: 1.25rem 0 0;
+  color: var(--muted-fg);
+  font-size: .8rem;
+  font-weight: 600;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1.5px;
+  background: var(--border);
+  border-radius: 9999px;
+}
+
+/* Google button iframe sizing */
+#google-btn-container iframe {
+  border-radius: .875rem !important;
+}
+</style>
 
 <script src="/js/auth.js"></script>
 </body>
