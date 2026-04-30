@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import database_v2 as db
 
 # Logging
-from monitoring import setup_logging, log_request, log_response
+from monitoring import log_request, log_response
 from cloud_storage import create_storage
 
 # Blueprints
@@ -41,7 +41,6 @@ from routes.moonface import moonface_bp
 from routes.translation import translation_bp
 
 import logging
-setup_logging()
 logger = logging.getLogger('brave_story.app')
 
 # ── App factory ───────────────────────────────────────────────────────
