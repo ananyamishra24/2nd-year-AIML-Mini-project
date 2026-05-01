@@ -123,17 +123,6 @@ def init_db():
         except Exception:
             pass  # column already exists
 
-        # Migrate: add hero customization columns to children
-        for _col, _def in [
-            ('medical_challenge', "TEXT DEFAULT ''"),
-            ('characteristics',   "TEXT DEFAULT ''"),
-            ('hero_character',    'TEXT DEFAULT NULL'),
-        ]:
-            try:
-                _execute(conn, f'ALTER TABLE children ADD COLUMN {_col} {_def}')
-            except Exception:
-                pass  # column already exists
-
         # Children profiles (linked to parent user)
         _execute(conn, '''
             CREATE TABLE IF NOT EXISTS children (
@@ -148,6 +137,17 @@ def init_db():
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ''')
+
+        # Migrate: add hero customization columns to children
+        for _col, _def in [
+            ('medical_challenge', "TEXT DEFAULT ''"),
+            ('characteristics',   "TEXT DEFAULT ''"),
+            ('hero_character',    'TEXT DEFAULT NULL'),
+        ]:
+            try:
+                _execute(conn, f'ALTER TABLE children ADD COLUMN {_col} {_def}')
+            except Exception:
+                pass  # column already exists
 
         # Stories table (extended with user_id)
         _execute(conn, '''
