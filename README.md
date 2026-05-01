@@ -18,6 +18,7 @@ CartoonCare turns difficult medical experiences into illustrated adventures. Par
 - [Testing](#testing)
 - [Security](#security)
 - [Project Structure](#project-structure)
+- [Screenshots](#screenshots)
 - [License](#license)
 
 ---
@@ -258,6 +259,54 @@ brave-story-maker/
 ├── .env.example
 └── README.md
 ```
+
+---
+
+## Screenshots
+
+### Authentication
+
+| Login | Sign Up |
+|:-----:|:-------:|
+| ![Login](screenshots/login.png) | ![Sign Up](screenshots/signup.png) |
+
+### Story Library
+
+| With stories | Empty state |
+|:------------:|:-----------:|
+| ![Home with stories](screenshots/home-stories.png) | ![Empty home](screenshots/home-empty.png) |
+
+### Create a Story
+
+| Empty form | Filled form | Custom settings |
+|:----------:|:-----------:|:---------------:|
+| ![Create empty](screenshots/create-empty.png) | ![Create filled](screenshots/create-filled.png) | ![Custom settings](screenshots/create-settings.png) |
+
+| Generating |
+|:----------:|
+| ![Generating](screenshots/generating.png) |
+
+### Story Viewer
+
+| Page 1 | Page 2 |
+|:------:|:------:|
+| ![Story page 1](screenshots/story-page1.png) | ![Story page 2](screenshots/story-page2.png) |
+
+| Narration | Translation |
+|:---------:|:-----------:|
+| ![Narration](screenshots/story-narration.png) | ![Translation](screenshots/story-translate.png) |
+
+### Credits & Admin
+
+| My Credits | Credit History | Admin Dashboard |
+|:----------:|:--------------:|:---------------:|
+| ![My Credits](screenshots/my-credits.png) | ![Credit History](screenshots/my-credits-history.png) | ![Admin Dashboard](screenshots/admin-dashboard.png) |
+
+### Help & Support
+
+| Feedback Dashboard |
+|:------------------:|
+| ![Help & Support](screenshots/help-support.png) |
 
 ---
 
