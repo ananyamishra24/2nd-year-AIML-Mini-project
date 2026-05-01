@@ -260,7 +260,9 @@ def serve_static_image(filename):
 # ── Entry point ───────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    logger.info('🚀 Brave Story Maker server starting...')
-    logger.info(f'📂 Serving client from: {CLIENT_DIR}')
-    logger.info(f'💾 Storage backend: {image_storage.__class__.__name__}')
-    app.run(host='0.0.0.0', port=5002, debug=True)
+    logger.info('Brave Story Maker server starting...')
+    logger.info(f'Serving client from: {CLIENT_DIR}')
+    logger.info(f'Storage backend: {image_storage.__class__.__name__}')
+    debug = os.environ.get('FLASK_DEBUG', '1') == '1'
+    port = int(os.environ.get('PORT', '5002'))
+    app.run(host='0.0.0.0', port=port, debug=debug)
