@@ -25,13 +25,14 @@ logger = logging.getLogger('brave_story.routes.stories')
 
 stories_bp = Blueprint('stories', __name__)
 
-# cloud storage injected at registration time
+# cloud storage and rate limiter injected at registration time
 _image_storage = None
+_limiter = None
 
 
 def init_stories_bp(image_storage, limiter=None):
     """Inject the image storage backend and rate limiter into the blueprint."""
-    global _image_storage
+    global _image_storage, _limiter
     _image_storage = image_storage
     if limiter:
         limiter.limit("5 per minute")(generate_story)
@@ -357,7 +358,10 @@ def generate_story():
                 max_tokens=4096,
                 messages=[{'role': 'user', 'content': prompt}],
             )
-            content = result.content[0].text.strip()
+            content = ''.join(
+                getattr(block, 'text', '') for block in result.content
+                if getattr(block, 'type', None) == 'text'
+            ).strip()
             claude_ms = int((time.time() - claude_start) * 1000)
             usage_counter.record('claude', success=True)
 

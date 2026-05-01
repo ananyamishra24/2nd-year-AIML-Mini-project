@@ -29,6 +29,7 @@ import database_v2 as db
 
 # Logging
 from cloud_storage import create_storage
+from monitoring import log_request, log_response
 
 # Blueprints
 from routes.auth import auth_bp
@@ -80,10 +81,12 @@ app.register_blueprint(translation_bp)
 @app.before_request
 def before_req():
     """Start a request timer for performance logging."""
+    log_request()
 
 @app.after_request
 def after_req(response):
     """Log method, path, status, and duration of every request."""
+    return log_response(response)
 
 @app.after_request
 def add_no_cache(response):
