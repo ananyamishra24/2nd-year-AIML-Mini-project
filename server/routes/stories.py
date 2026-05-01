@@ -25,14 +25,13 @@ logger = logging.getLogger('brave_story.routes.stories')
 
 stories_bp = Blueprint('stories', __name__)
 
-# cloud storage and rate limiter injected at registration time
+# cloud storage injected at registration time
 _image_storage = None
-_limiter = None
 
 
 def init_stories_bp(image_storage, limiter=None):
     """Inject the image storage backend and rate limiter into the blueprint."""
-    global _image_storage, _limiter
+    global _image_storage
     _image_storage = image_storage
     if limiter:
         limiter.limit("5 per minute")(generate_story)
