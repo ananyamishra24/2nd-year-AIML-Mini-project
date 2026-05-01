@@ -18,7 +18,7 @@ from flask import request, jsonify, g
 
 logger = logging.getLogger('brave_story.auth')
 
-SECRET_KEY = os.environ.get('JWT_SECRET_KEY', secrets.token_hex(32))
+SECRET_KEY = secrets.token_hex(32)
 TOKEN_EXPIRY_HOURS = int(os.environ.get('TOKEN_EXPIRY_HOURS', '72'))
 ALGORITHM = 'HS256'
 
